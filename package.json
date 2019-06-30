@@ -1,0 +1,41 @@
+{
+  "name": "@rumbleship/acl",
+  "version": "0.0.0",
+  "authors": [
+    "Isaac Sparling <isaac@rumbleship.com"
+  ],
+  "main": "lib/index.js",
+  "description": "Consolidate TypeGraphQL and basic permissioning declarations into a central, queryable store",
+  "license": "MIT",
+  "private": true,
+  "engines": {
+    "node": "10.x"
+  },
+  "scripts": {
+    "build": "NODE_PATH=. tsc -p .",
+    "test": "NODE_PATH=. tsc -p . && NODE_PATH=. NODE_ENV=test jest",
+    "lint": "NODE_PATH=. tslint --project .",
+    "coverage": "NODE_PATH=. tsc -p . && NODE_PATH=. jest --coverage --coverageReporters=text-lcov | coveralls"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.0.6",
+    "@types/node": "^12.0.4",
+    "babel-core": "^7.0.0-0",
+    "babel-jest": "^24.1.0",
+    "coveralls": "^3.0.3",
+    "jest": "^24.0.0",
+    "prettier": "^1.14.3",
+    "prettier-tslint": "^0.4.0",
+    "ts-jest": "^24.0.0",
+    "ts-node": "^8.0.2",
+    "tslint": "^5.10.0",
+    "tslint-config-airbnb": "^5.9.2",
+    "tslint-config-prettier": "^1.14.0",
+    "tslint-no-focused-test": "^0.5.0",
+    "tslint-plugin-prettier": "^2.0.1",
+    "typescript": "^3.4.3"
+  },
+  "jest": {
+    "testEnvironment": "node"
+  }
+}
