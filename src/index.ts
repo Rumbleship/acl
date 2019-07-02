@@ -58,8 +58,8 @@ export class Authorizer {
           ([role, identifiersWithPermissions]) => {
             const permissions: Actions[] = this.permissionsBeingConsidered(
               role,
-              from,
-              authorizable
+              authorizable,
+              from
             );
             const identifier = (authorizable as any)[attribute];
             if (
@@ -81,8 +81,11 @@ export class Authorizer {
       identifiersWithPermissions.includes('*')
     );
   }
-  private permissionsBeingConsidered(role: Roles, from: Resource, authorizable: object): Actions[] {
+  private permissionsBeingConsidered(role: Roles, authorizable: any, from?: Resource): Actions[] {
     const permissionable = from || authorizable.constructor.name;
+    if (permissionable === 'Object') {
+      throw new Error('Cannot permission on generic `Object`');
+    }
     if (!this.matrix[role]) {
       return [];
     }

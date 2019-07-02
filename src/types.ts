@@ -51,7 +51,7 @@ export interface RumbleshipAccessTokenSignature {
 
 export interface IAllowedQuery {
   to: Actions;
-  from: Resource;
+  from?: Resource;
   match?: string;
   against: object;
 }

@@ -196,7 +196,7 @@ describe(`Given: a permission matrix that gives:
       });
     });
   });
-  describe('Context: `authorized()` defaults to matching against attribute `hashid` ', () => {
+  describe('Feature: `allowed()` defaults to matching against attribute `hashid` ', () => {
     describe(`And: two resources:
         One that should be authorized against 'id'
         One that should be authorized against its 'hashid' `, () => {
@@ -252,6 +252,63 @@ describe(`Given: a permission matrix that gives:
               against: permissionedOnId
             })
           ).toBe(false);
+        });
+      });
+    });
+  });
+  describe(`Feature: 'allowed()' PermissionGroup defaults to constructor of passed 'AuthorizableResource'
+    and can be explicitly specified as 'from'`, () => {
+    describe(`Given: a named class 'User' and an anoymous object populated with same identifier: 'u_12345'`, () => {
+      const hashid = 'u_12345';
+      class User {
+        // tslint:disable-next-line: no-shadowed-variable
+        constructor(private hashid: string) {}
+        toString() {
+          return this.hashid;
+        }
+      }
+      const classResource = new User(hashid);
+      const objectResource = { hashid };
+      describe('And: an Authorizer that wraps an AccessToken ADMIN role on the resource', () => {
+        const accessToken = jwt.sign(
+          {
+            roles: {
+              [Roles.ADMIN]: [hashid],
+              [Roles.USER]: [],
+              [Roles.PENDING]: []
+            }
+          },
+          SECRET
+        );
+        const authorizer = new Authorizer(accessToken, SECRET, PermissionSource.MATRIX, matrix);
+        describe(`When: requesting authorization without specifying 'from'`, () => {
+          test('Then: the classResource should succeed', () => {
+            expect(
+              authorizer.allowed({
+                to: Actions.DELETE,
+                against: classResource
+              })
+            ).toBe(true);
+          });
+          test('Then: the objectResource should throw', () => {
+            expect(() =>
+              authorizer.allowed({
+                to: Actions.DELETE,
+                against: objectResource
+              })
+            ).toThrow('Cannot permission on generic `Object`');
+          });
+        });
+        describe(`When: requesting authorization and specifying 'from'`, () => {
+          test('Then: the `from` should override default should succeed', () => {
+            expect(
+              authorizer.allowed({
+                to: Actions.READ,
+                from: Resource.Division,
+                against: classResource
+              })
+            ).toBe(true);
+          });
         });
       });
     });
