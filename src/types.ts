@@ -53,6 +53,7 @@ export interface Claims extends ClaimsInput {
   iat: Date;
 }
 
+// tslint:disable-next-line: interface-name
 export interface IAllowedQuery {
   to: Actions;
   from?: Resource;

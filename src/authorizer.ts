@@ -54,7 +54,7 @@ export class Authorizer {
   isAuthenticated(): boolean {
     // probably and some logic on expiry here too.
     if ((this.exp as Date) < new Date()) {
-      console.log('expired');
+      throw new Error('expired');
     }
     return !!this.roles;
   }
