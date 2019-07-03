@@ -1,3 +1,4 @@
+import { ClaimsInput } from './types';
 export enum PermissionSource {
   MATRIX = 'matrix',
   DECORATOR = 'decorator'
@@ -35,16 +36,19 @@ export interface PermissionsMatrix {
 
 // "I have role X at resources [A, B, C]"
 export interface RolesAt {
+  [key: string]: any[];
   [Roles.ADMIN]: string[]; // should be Oid[]
   [Roles.USER]: string[]; // should be Oid[]
   [Roles.PENDING]: string[]; // should be Oid[]
 }
 
-export interface RumbleshipAccessTokenSignature {
+export interface ClaimsInput {
   name?: string;
   user?: string;
   client?: string;
   roles: RolesAt;
+}
+export interface Claims extends ClaimsInput {
   exp: Date;
   iat: Date;
 }

@@ -1,6 +1,5 @@
-import { Authorizer } from './../index';
+import { Authorizer, createAuthHeader } from './../index';
 import { Roles, Resource, PermissionSource, Actions } from './../types';
-import * as jwt from 'jsonwebtoken';
 const SECRET = 'signingsecret';
 describe(`Given: a permission matrix that gives: 
       admin: 'UPDATE', 'READ', 'APPROVE' on a 'Division'
@@ -19,14 +18,14 @@ describe(`Given: a permission matrix that gives:
       [Resource.Division]: [Actions.REQUEST]
     }
   };
-  describe('Context: raw permission logic', () => {
+  describe('Feature: An Authorizer can provide permissions', () => {
     describe('And: two resources: [`b_abcde`, `u_123ce`]', () => {
       describe('And: an Authorizer wrapping a signed AccessToken that has `User` role on the first, `b_abcde`, and `ADMIN` role for both the other, `s_123ce`, `u_54def`', () => {
         let authorizer: Authorizer;
         const id = 'b_abcde';
         const anotherId = 'u_123ce';
         const resource = { hashid: id };
-        const accessToken = jwt.sign(
+        const authHeader = createAuthHeader(
           {
             roles: {
               [Roles.ADMIN]: [id, anotherId],
@@ -37,7 +36,8 @@ describe(`Given: a permission matrix that gives:
           SECRET
         );
         beforeAll(() => {
-          authorizer = new Authorizer(accessToken, SECRET, PermissionSource.MATRIX, matrix);
+          authorizer = new Authorizer(authHeader, SECRET, PermissionSource.MATRIX, matrix);
+          authorizer.authenticate();
         });
         describe('When: asking for an authorized action against an owned resource with a non-intersecting set of Actions allowed', () => {
           describe.each([Actions.UPDATE, Actions.READ, Actions.APPROVE])('%s:u_123ce', action => {
@@ -78,7 +78,7 @@ describe(`Given: a permission matrix that gives:
         const anotherId = 'u_123ce';
         const resource = { hashid: id };
         const anotherResource = { hashid: anotherId };
-        const accessToken = jwt.sign(
+        const authHeader = createAuthHeader(
           {
             roles: {
               [Roles.ADMIN]: [],
@@ -89,7 +89,8 @@ describe(`Given: a permission matrix that gives:
           SECRET
         );
         beforeAll(() => {
-          authorizer = new Authorizer(accessToken, SECRET, PermissionSource.MATRIX, matrix);
+          authorizer = new Authorizer(authHeader, SECRET, PermissionSource.MATRIX, matrix);
+          authorizer.authenticate();
         });
         describe('When: asking for an allowed Action against an owned Resource', () => {
           describe.each([Actions.READ, Actions.APPROVE])('%s:b_abcde', action => {
@@ -158,7 +159,7 @@ describe(`Given: a permission matrix that gives:
       });
       describe('And: an Authorizer wrapping an AccessToken that corresponds to SysAdmin roles', () => {
         let authorizer: Authorizer;
-        const accessToken = jwt.sign(
+        const authHeader = createAuthHeader(
           {
             roles: {
               [Roles.ADMIN]: ['*'],
@@ -169,7 +170,8 @@ describe(`Given: a permission matrix that gives:
           SECRET
         );
         beforeAll(() => {
-          authorizer = new Authorizer(accessToken, SECRET, PermissionSource.MATRIX, matrix);
+          authorizer = new Authorizer(authHeader, SECRET, PermissionSource.MATRIX, matrix);
+          authorizer.authenticate();
         });
         test('Then: `authorizer.isUserSysAdmin() returns true', () => {
           expect(authorizer.isUserSysAdmin()).toBe(true);
@@ -196,6 +198,23 @@ describe(`Given: a permission matrix that gives:
       });
     });
   });
+  describe('Feature: An Authorizer only accepts a properly formatted `Bearer {{jwt.claims.here}}', () => {
+    test.each([
+      'bearer jwt.claims.here',
+      'Bearer nosubsections',
+      'Bearer',
+      'hdaoe',
+      'jwt.claims.here'
+    ])(
+      'Constructing an Authorizer with an invalid auth header: %s throws',
+      (badAuthHeader: string) => {
+        expect(() => new Authorizer(badAuthHeader, SECRET)).toThrow();
+      }
+    );
+    test('Constructing an authorizer with a valid header `Bearer jwt.claims.here` succeeds', () => {
+      expect(new Authorizer('Bearer jwt.claims.here', SECRET)).toBeTruthy();
+    });
+  });
   describe('Feature: `allowed()` defaults to matching against attribute `hashid` ', () => {
     describe(`And: two resources:
         One that should be authorized against 'id'
@@ -206,7 +225,7 @@ describe(`Given: a permission matrix that gives:
       const permissionedOnHashid = { hashid };
       describe('When: requesting permissions without specifying a field, against the hashid record', () => {
         let authorizer: Authorizer;
-        const accessToken = jwt.sign(
+        const authHeader = createAuthHeader(
           {
             roles: {
               [Roles.ADMIN]: [id, hashid],
@@ -217,7 +236,8 @@ describe(`Given: a permission matrix that gives:
           SECRET
         );
         beforeAll(() => {
-          authorizer = new Authorizer(accessToken, SECRET, PermissionSource.MATRIX, matrix);
+          authorizer = new Authorizer(authHeader, SECRET, PermissionSource.MATRIX, matrix);
+          authorizer.authenticate();
         });
         test('Then: an allowed permission should succeed', () => {
           expect(
@@ -231,7 +251,7 @@ describe(`Given: a permission matrix that gives:
       });
       describe('When: requesting permissions without specifying a field, against the id record', () => {
         let authorizer: Authorizer;
-        const accessToken = jwt.sign(
+        const authHeader = createAuthHeader(
           {
             roles: {
               [Roles.ADMIN]: [id, hashid],
@@ -242,7 +262,8 @@ describe(`Given: a permission matrix that gives:
           SECRET
         );
         beforeAll(() => {
-          authorizer = new Authorizer(accessToken, SECRET, PermissionSource.MATRIX, matrix);
+          authorizer = new Authorizer(authHeader, SECRET, PermissionSource.MATRIX, matrix);
+          authorizer.authenticate();
         });
         test('Then: an allowed permission should be denied', () => {
           expect(
@@ -270,7 +291,7 @@ describe(`Given: a permission matrix that gives:
       const classResource = new User(hashid);
       const objectResource = { hashid };
       describe('And: an Authorizer that wraps an AccessToken ADMIN role on the resource', () => {
-        const accessToken = jwt.sign(
+        const authHeader = createAuthHeader(
           {
             roles: {
               [Roles.ADMIN]: [hashid],
@@ -280,7 +301,8 @@ describe(`Given: a permission matrix that gives:
           },
           SECRET
         );
-        const authorizer = new Authorizer(accessToken, SECRET, PermissionSource.MATRIX, matrix);
+        const authorizer = new Authorizer(authHeader, SECRET, PermissionSource.MATRIX, matrix);
+        authorizer.authenticate();
         describe(`When: requesting authorization without specifying 'from'`, () => {
           test('Then: the classResource should succeed', () => {
             expect(
