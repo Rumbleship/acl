@@ -1,4 +1,4 @@
-import { PermissionsMatrix, IAllowedQuery, Claims, ClaimsInput, PermissionSource, RolesAt } from './types';
+import { PermissionsMatrix, IAllowedQuery, Claims, ClaimsInput, Actions, PermissionSource, RolesAt } from './types';
 export declare class Authorizer {
     private authorizationHeader;
     private secret;
@@ -12,6 +12,7 @@ export declare class Authorizer {
     isAuthenticated(): boolean;
     getRoles(): RolesAt;
     getClaims(): Claims;
+    allowedDecorator(matrix: PermissionsMatrix, action: Actions, authorizable: object): boolean;
     allowed(options: IAllowedQuery): boolean;
     isUserSysAdmin(): boolean;
     private permissionsBeingConsidered;

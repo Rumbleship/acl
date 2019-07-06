@@ -1,4 +1,3 @@
-import { ClaimsInput } from './types';
 export enum PermissionSource {
   MATRIX = 'matrix',
   DECORATOR = 'decorator'
@@ -15,7 +14,8 @@ export enum Actions {
   UPDATE = 'update',
   DELETE = 'delete',
   REQUEST = 'request',
-  APPROVE = 'approve'
+  APPROVE = 'approve',
+  QUERY = 'query'
 }
 
 export enum Resource {
@@ -24,23 +24,20 @@ export enum Resource {
   Order = 'Order'
 }
 
-export interface PermissionsGroup {
-  PermissionedObjects?: Actions[];
-}
+export type PermissionsGroup = {
+  // Only Resources defined are valid to permission on,
+  // but all are not required to be permissioned on.
+  [key in Resource]?: Actions[];
+};
 
-export interface PermissionsMatrix {
-  [Roles.ADMIN]: PermissionsGroup & { [key: string]: any[] };
-  [Roles.USER]: PermissionsGroup & { [key: string]: any[] };
-  [Roles.PENDING]: PermissionsGroup & { [key: string]: any[] };
-}
+export type PermissionsMatrix = {
+  [key in Roles]?: PermissionsGroup;
+};
 
 // "I have role X at resources [A, B, C]"
-export interface RolesAt {
-  [key: string]: any[];
-  [Roles.ADMIN]: string[]; // should be Oid[]
-  [Roles.USER]: string[]; // should be Oid[]
-  [Roles.PENDING]: string[]; // should be Oid[]
-}
+export type RolesAt = {
+  [key in Roles]?: string[]; // should be Oid[]
+};
 
 export interface ClaimsInput {
   name?: string;
@@ -60,18 +57,3 @@ export interface IAllowedQuery {
   match?: string;
   against: object;
 }
-
-// const Permissions = {
-//   [PENDING]: {
-//     User: ['read']
-//   },
-//   [USER]: {
-//     Division: ['read', 'update'],
-//     Order: ['read', 'create']
-//   },
-//   [ADMIN]: {
-//     Division: ['read', 'create', 'update'],
-//     Order: ['read', 'create', 'update'],
-//     User: ['read', 'create', 'update']
-//   }
-// };

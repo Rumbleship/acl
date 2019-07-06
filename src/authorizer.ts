@@ -8,7 +8,8 @@ import {
   Actions,
   Resource,
   PermissionSource,
-  RolesAt
+  RolesAt,
+  PermissionsGroup
 } from './types';
 const BEARER_TOKEN_REGEX = /^Bearer [A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/;
 export class Authorizer {
@@ -67,6 +68,42 @@ export class Authorizer {
   getClaims(): Claims {
     return jwt.verify(this.accessToken, this.secret) as Claims;
   }
+
+  allowedDecorator(
+    matrix: PermissionsMatrix,
+    action: Actions,
+    authorizable: object
+    // against: string
+  ) {
+    if (!this.roles) {
+      throw new Error('Cannot query an unauthenticated Authorizer. Invoke `authenticate()` first.');
+    }
+    if (this.isUserSysAdmin()) {
+      return true;
+    }
+
+    let access = false;
+
+    (Object.entries(matrix) as [[Roles, PermissionsGroup]]).forEach(
+      ([roleWithPermissionsDefined, actionsAllowed]) => {
+        Object.entries(actionsAllowed as [Resource, Actions[]]).forEach(([resource, actions]) => {
+          const authorizableAttribute =
+            authorizable.constructor.name === resource ? 'id' : `${resource.toLowerCase()}_id`;
+          if (
+            (this.roles as any)[roleWithPermissionsDefined].includes(
+              (authorizable as any)[authorizableAttribute]
+            ) &&
+            actions.includes(action)
+          ) {
+            access = true;
+          }
+        });
+      }
+    );
+
+    return access;
+  }
+
   allowed(options: IAllowedQuery): boolean {
     if (!this.roles) {
       throw new Error('Cannot query an unauthenticated Authorizer. Invoke `authenticate()` first.');
@@ -74,28 +111,18 @@ export class Authorizer {
     const { to: permission, from, match: attribute = 'hashid', against: authorizable } = options;
     let access = false;
 
-    switch (this.sourceType) {
-      case PermissionSource.DECORATOR:
-        throw new Error('decorators not currently supported');
-      case PermissionSource.MATRIX:
-        (Object.entries(this.roles) as [[Roles, string[]]]).forEach(
-          ([role, identifiersWithPermissions]) => {
-            const permissions: Actions[] = this.permissionsBeingConsidered(
-              role,
-              authorizable,
-              from
-            );
-            const identifier = (authorizable as any)[attribute];
-            if (
-              this.isUserSysAdmin() ||
-              (identifiersWithPermissions.includes(identifier) && permissions.includes(permission))
-            ) {
-              access = true;
-            }
-          }
-        );
-        break;
-    }
+    (Object.entries(this.roles) as [[Roles, string[]]]).forEach(
+      ([role, identifiersWithPermissions]) => {
+        const permissions: Actions[] = this.permissionsBeingConsidered(role, authorizable, from);
+        const identifier = (authorizable as any)[attribute];
+        if (
+          this.isUserSysAdmin() ||
+          (identifiersWithPermissions.includes(identifier) && permissions.includes(permission))
+        ) {
+          access = true;
+        }
+      }
+    );
 
     return access;
   }
@@ -104,19 +131,20 @@ export class Authorizer {
     if (!this.roles) {
       return false;
     }
-    return Object.values(this.roles).every((identifiersWithPermissions: string[]) =>
+    return Object.values(this.roles).every((identifiersWithPermissions: string[] = []) =>
       identifiersWithPermissions.includes('*')
     );
   }
   private permissionsBeingConsidered(role: Roles, authorizable: any, from?: Resource): Actions[] {
-    const permissionable = from || authorizable.constructor.name;
+    const permissionable = from || (authorizable.constructor.name as string);
     if (permissionable === 'Object') {
       throw new Error('Cannot permission on generic `Object`');
     }
     if (!this.matrix[role]) {
       return [];
     }
-    return this.matrix[role][permissionable];
+    const group: PermissionsGroup = this.matrix[role] as PermissionsGroup;
+    return group[permissionable as Resource] as Actions[];
   }
 }
 
@@ -131,6 +159,7 @@ export function baseRoles(): RolesAt {
 
 export function sysAdminRoles(): RolesAt {
   const roles: RolesAt = baseRoles();
-  Object.keys(roles).forEach(role => roles[role].push('*'));
+  /// as any below is because RolesAt has possibly undefined members.
+  (Object.keys(roles) as Roles[]).forEach(role => (roles[role] as any).push('*'));
   return roles;
 }
