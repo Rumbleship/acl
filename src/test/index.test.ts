@@ -1,4 +1,7 @@
-import { Authorizer, createAuthHeader } from './../index';
+import * as tk from 'timekeeper';
+import * as jwt from 'jsonwebtoken';
+import * as moment from 'moment';
+import { Authorizer, baseRoles, createAuthHeader } from './../index';
 import { Roles, Resource, PermissionSource, Actions } from './../types';
 const SECRET = 'signingsecret';
 describe(`Given: a permission matrix that gives: 
@@ -330,6 +333,60 @@ describe(`Given: a permission matrix that gives:
                 against: classResource
               })
             ).toBe(true);
+          });
+        });
+      });
+    });
+  });
+  describe('Feature: `authenticate()` throws IFF jwt is expired', () => {
+    describe('Given: time is frozen at X', () => {
+      const now = new Date();
+      beforeAll(() => {
+        tk.freeze(now);
+      });
+      afterAll(() => {
+        tk.reset();
+      });
+      describe('And: an Authorizer wrapping an accessToken whose `claims.exp` is in the future', () => {
+        let authorizer: Authorizer;
+        beforeAll(() => {
+          const roles = baseRoles();
+          const accessToken = jwt.sign({ roles }, SECRET);
+          authorizer = new Authorizer(
+            `Bearer ${accessToken}`,
+            SECRET,
+            PermissionSource.MATRIX,
+            matrix
+          );
+        });
+        describe('When: authenticating the authorizer', () => {
+          test('Then: authorizer.authenticate() should return true', () => {
+            expect(() => authorizer.authenticate()).not.toThrow();
+            expect(authorizer.authenticate()).toBe(true);
+          });
+        });
+      });
+      describe('And: an Authorizer wrapping an accessToken whose `claims.exp` is in the past', () => {
+        let authorizer: Authorizer;
+        let tenSecondsAgo;
+        beforeAll(() => {
+          tenSecondsAgo = moment(now).subtract(10, 'seconds');
+          tk.travel(tenSecondsAgo.toDate());
+          const roles = baseRoles();
+          const accessToken = jwt.sign({ roles }, SECRET, {
+            expiresIn: '2sec'
+          });
+          authorizer = new Authorizer(
+            `Bearer ${accessToken}`,
+            SECRET,
+            PermissionSource.MATRIX,
+            matrix
+          );
+          tk.travel(now);
+        });
+        describe('When: authenticating the authorizer', () => {
+          test('Then: authorizer.authenticate() should throw', () => {
+            expect(() => authorizer.authenticate()).toThrow();
           });
         });
       });

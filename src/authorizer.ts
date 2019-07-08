@@ -18,7 +18,7 @@ export class Authorizer {
   // private user?: string;
   // private name?: string;
   // private client?: string;
-  private exp?: Date;
+  // private exp?: Date;
   constructor(
     private authorizationHeader: string,
     private secret: string,
@@ -46,17 +46,9 @@ export class Authorizer {
     }
   }
 
-  authenticate(): void {
-    const { roles, exp } = jwt.verify(this.accessToken, this.secret) as Claims;
+  authenticate(): boolean {
+    const { roles } = jwt.verify(this.accessToken, this.secret) as Claims;
     this.roles = roles;
-    this.exp = exp;
-  }
-
-  isAuthenticated(): boolean {
-    // probably and some logic on expiry here too.
-    if ((this.exp as Date) < new Date()) {
-      throw new Error('expired');
-    }
     return !!this.roles;
   }
 

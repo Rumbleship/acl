@@ -6,10 +6,8 @@ export declare class Authorizer {
     private matrix;
     private accessToken;
     private roles?;
-    private exp?;
     constructor(authorizationHeader: string, secret: string, sourceType?: PermissionSource, matrix?: PermissionsMatrix);
-    authenticate(): void;
-    isAuthenticated(): boolean;
+    authenticate(): boolean;
     getRoles(): RolesAt;
     getClaims(): Claims;
     allowedDecorator(matrix: PermissionsMatrix, action: Actions, authorizable: object): boolean;
