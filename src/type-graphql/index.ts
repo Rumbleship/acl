@@ -1,9 +1,9 @@
+import { PermissionsMatrix } from './../types';
 import { AuthChecker } from 'type-graphql';
 import { Authorizer } from '../authorizer';
-import { PermissionsMatrix } from '../types';
 
 // TODO: integrate jwt provided in the request header of HAPI...
-export const RFIAuthChecker: AuthChecker<any> = (
+export const RFIAuthChecker: AuthChecker<any, PermissionsMatrix> = (
   { root, args, context, info },
   definedRoleGroups
 ) => {
@@ -12,5 +12,5 @@ export const RFIAuthChecker: AuthChecker<any> = (
   );
   const { operation } = info.operation;
 
-  return authorization.allowedDecorator(definedRoleGroups[0] as PermissionsMatrix, operation, root);
+  return authorization.allowedDecorator(definedRoleGroups[0], operation, root);
 };
