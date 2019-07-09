@@ -6,7 +6,8 @@ import {
   Actions,
   Resource,
   PermissionSource,
-  RolesAt
+  RolesAt,
+  PermissionsGroup
 } from './types';
 import { baseRoles } from './helpers';
 const BEARER_TOKEN_REGEX = /^Bearer [A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/;
@@ -63,11 +64,11 @@ export class Authorizer {
    * Type-GraphQL compatible method that singularly answers the question:
    * "Given the accessToken that this Authorizer represents:
    *    - can I take an Action against an Authorizable object, given a set of Permissions
-   *      defined by a TypeGraphQL @Authorized decorator"
+   *      defined by a TypeGraphQL Authorized decorator"
    * @param action The action under consideration, typically query|mutation in GQL
    * @param authorizable In a RESTful world, an object whose entiriety should be authorized.
    *                      In A GQL world, an object with fields being individually authorized.
-   * @param matrix The permission matrix defined in the GQL model via @Authorized
+   * @param matrix The permission matrix defined in the GQL model via Authorized decorator
    * @param attribute? The attribute that should be used to index into the `authorizable`
    * @param resource? An override if `authorizeable.constructor.name` is not the group of
    *                    actions to permission against
@@ -94,10 +95,14 @@ export class Authorizer {
 
     const permissions = matrix || this.matrix;
     for (const [role, group] of Object.entries(permissions)) {
+      const permissionedIdentifiers = (this.roles as any)[role] || [];
+      /**
+       * If a resource has been passed in, use that to select the group of permissions we're interested in
+       * If not, guess at the group by inflecting on the name of the record we're authorizing
+       */
       const actions = resource
         ? (group as any)[resource]
         : (group as any)[authorizable.constructor.name] || [];
-
       /**
        * If an attribute to authorize against is passed, it should be used.
        *
@@ -105,18 +110,26 @@ export class Authorizer {
        * - default to 'id' (in TypeGraphQL land, where `id` can be wrapped and unwrapped to its OID
        * - default to 'hashid' (legacy), where `id` and `hashid` are stored separately in DB
        */
-      const authorizableAttribute = attribute
-        ? attribute
-        : !!matrix
-        ? authorizable.constructor.name === resource
-          ? 'id'
-          : `${(resource || authorizable.constructor.name).toLowerCase()}_id`
-        : 'hashid';
-
-      const identifier = (authorizable as any)[authorizableAttribute];
-      const permissionedIdentifiers = (this.roles as any)[role] || [];
+      let authorizableAttribute = attribute ? attribute : matrix ? 'id' : 'hashid';
+      let identifier = (authorizable as any)[authorizableAttribute];
       if (permissionedIdentifiers.includes(identifier) && (actions as any).includes(action)) {
         access = true;
+      }
+
+      // passed in overrides didn't get us access; now we have to search.
+      if (!access) {
+        for (const [resourceWithPermissions, allowedActions] of Object.entries(
+          group as PermissionsGroup
+        )) {
+          authorizableAttribute = `${resourceWithPermissions.toLowerCase()}_id`;
+          identifier = (authorizable as any)[authorizableAttribute];
+          if (
+            permissionedIdentifiers.includes(identifier) &&
+            (allowedActions as any).includes(action)
+          ) {
+            access = true;
+          }
+        }
       }
     }
     return access;

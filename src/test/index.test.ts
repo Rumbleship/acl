@@ -240,31 +240,31 @@ describe(`Given: a permission matrix that gives:
       expect(new Authorizer('Bearer jwt.claims.here', SECRET)).toBeTruthy();
     });
   });
-  describe('Feature: `can()` defaults to matching against attribute `hashid` ', () => {
-    describe('And: the permission matrix assigned at instantiation is not overriden at invocation', () => {
-      describe(`And: two resources:
+  describe('Feature: authorization defaults to matching `hashid` or `id` based on whether the permission matrix is overridden at invocation', () => {
+    describe(`And: two resources:
           One that should be authorized against 'id'
           One that should be authorized against its 'hashid' `, () => {
-        const id = 'b_abcde';
-        const hashid = 'u_123de';
-        const permissionedOnId = { id };
-        const permissionedOnHashid = { hashid };
+      const id = 'b_abcde';
+      const hashid = 'u_123de';
+      const permissionedOnId = { id };
+      const permissionedOnHashid = { hashid };
+      const authHeader = createAuthHeader(
+        {
+          roles: {
+            [Roles.ADMIN]: [id, hashid],
+            [Roles.USER]: [],
+            [Roles.PENDING]: []
+          }
+        },
+        SECRET
+      );
+      describe('And: the permission matrix assigned at instantiation is not overriden at invocation', () => {
+        let authorizer: Authorizer;
+        beforeAll(() => {
+          authorizer = new Authorizer(authHeader, SECRET, PermissionSource.MATRIX, matrix);
+          authorizer.authenticate();
+        });
         describe('When: requesting permissions without specifying a field, against the hashid record', () => {
-          let authorizer: Authorizer;
-          const authHeader = createAuthHeader(
-            {
-              roles: {
-                [Roles.ADMIN]: [id, hashid],
-                [Roles.USER]: [],
-                [Roles.PENDING]: []
-              }
-            },
-            SECRET
-          );
-          beforeAll(() => {
-            authorizer = new Authorizer(authHeader, SECRET, PermissionSource.MATRIX, matrix);
-            authorizer.authenticate();
-          });
           test('Then: authorization for an allowed permission via `can()` is granted', () => {
             expect(
               authorizer.can(
@@ -287,21 +287,6 @@ describe(`Given: a permission matrix that gives:
           });
         });
         describe('When: requesting permissions without specifying a field, against the id record', () => {
-          let authorizer: Authorizer;
-          const authHeader = createAuthHeader(
-            {
-              roles: {
-                [Roles.ADMIN]: [id, hashid],
-                [Roles.USER]: [],
-                [Roles.PENDING]: []
-              }
-            },
-            SECRET
-          );
-          beforeAll(() => {
-            authorizer = new Authorizer(authHeader, SECRET, PermissionSource.MATRIX, matrix);
-            authorizer.authenticate();
-          });
           test('Then: authorization for an allowed permission via `can()` is denied', () => {
             expect(
               authorizer.can(
@@ -324,25 +309,53 @@ describe(`Given: a permission matrix that gives:
           });
         });
       });
+      describe('And: the permission matrix assigned at instantiation is overridden at invocation', () => {
+        let authorizer: Authorizer;
+        beforeAll(() => {
+          authorizer = new Authorizer(authHeader, SECRET, PermissionSource.MATRIX, {});
+          authorizer.authenticate();
+        });
+        describe('When: requesting permissions on default attribute, specifying the group, against the hashid record', () => {
+          test('Then: authorization for an allowed permission via `can()` is denied', () => {
+            expect(
+              authorizer.can(
+                Actions.READ,
+                permissionedOnHashid,
+                matrix,
+                undefined,
+                Resource.Division
+              )
+            ).toBe(false);
+          });
+        });
+        describe('When: requesting permissions on default attribute, specifying the group, against the id record', () => {
+          test('Then: authorization for an allowed permission via `can()` is granted', () => {
+            expect(
+              authorizer.can(Actions.READ, permissionedOnId, matrix, undefined, Resource.Division)
+            ).toBe(true);
+          });
+        });
+      });
     });
   });
   describe(`Feature: authorization defaults to using the PermissionGroup that corresponds to to constructor of passed 'AuthorizableResource'`, () => {
     describe(`Given: a named class 'User' and an anoymous object populated with same identifier: 'u_12345'`, () => {
       const hashid = 'u_12345';
+      const division_id = 'b_abcde';
       class User {
         // tslint:disable-next-line: no-shadowed-variable
-        constructor(private hashid: string) {}
+        constructor(private hashid: string, private division_id: string) {}
         toString() {
-          return this.hashid;
+          return [this.hashid, this.division_id];
         }
       }
-      const classResource = new User(hashid);
+      const classResource = new User(hashid, division_id);
       const objectResource = { hashid };
       describe('And: an Authorizer that wraps an AccessToken ADMIN role on the resource', () => {
         const authHeader = createAuthHeader(
           {
             roles: {
-              [Roles.ADMIN]: [hashid],
+              [Roles.ADMIN]: [hashid, division_id],
               [Roles.USER]: [],
               [Roles.PENDING]: []
             }
@@ -418,6 +431,22 @@ describe(`Given: a permission matrix that gives:
                   against: objectResource
                 })
               ).toBe(true);
+            });
+          });
+        });
+        describe('And: when overriding matrix at invocation', () => {
+          describe('When: requesting permissions on default attribute, default group', () => {
+            test('Then: authorization for an allowed permission via `can()` is granted', () => {
+              expect(
+                authorizer.can(Actions.READ, classResource, matrix, undefined, undefined)
+              ).toBe(true);
+            });
+          });
+          describe('When: requesting permissions on default attribute, default group', () => {
+            test('Then: authorization for an unallowed permission via `can()` is denied', () => {
+              expect(
+                authorizer.can(Actions.REQUEST, classResource, matrix, undefined, undefined)
+              ).toBe(false);
             });
           });
         });
