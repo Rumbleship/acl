@@ -97,16 +97,21 @@ export class Authorizer {
       const actions = resource
         ? (group as any)[resource]
         : (group as any)[authorizable.constructor.name] || [];
-      // If a PermissionMatrix has been passed in, use it, and implicitly assume we're in TypeGraphQL-land
-      const authorizableAttribute = matrix
+
+      /**
+       * If an attribute to authorize against is passed, it should be used.
+       *
+       * Otherwise, use presence|absence of a passed PermissionsMatrix to determine if:
+       * - default to 'id' (in TypeGraphQL land, where `id` can be wrapped and unwrapped to its OID
+       * - default to 'hashid' (legacy), where `id` and `hashid` are stored separately in DB
+       */
+      const authorizableAttribute = attribute
+        ? attribute
+        : !!matrix
         ? authorizable.constructor.name === resource
-          ? // New services treat `id` as an unwrapable OID (whether hashid or uuid-wrapped)
-            'id'
+          ? 'id'
           : `${(resource || authorizable.constructor.name).toLowerCase()}_id`
-        : // If a matrix hasn't been passed in, we can safely assume that we're in old Alpha|Mediator code,
-          // where `id` and `hashid` are treated distinctly. Default to picking out `hashid`, but let invoker
-          // override by passing the `attribute` variable.
-          attribute || 'hashid';
+        : 'hashid';
 
       const identifier = (authorizable as any)[authorizableAttribute];
       const permissionedIdentifiers = (this.roles as any)[role] || [];
