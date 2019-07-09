@@ -1,4 +1,4 @@
-import { PermissionsMatrix, IAllowedQuery, Claims, ClaimsInput, Actions, PermissionSource, RolesAt } from './types';
+import { PermissionsMatrix, IAllowedQuery, Claims, Actions, PermissionSource, RolesAt } from './types';
 export declare class Authorizer {
     private authorizationHeader;
     private secret;
@@ -15,6 +15,3 @@ export declare class Authorizer {
     isUserSysAdmin(): boolean;
     private permissionsBeingConsidered;
 }
-export declare function createAuthHeader(claims: ClaimsInput, secret: string, options?: object): string;
-export declare function baseRoles(): RolesAt;
-export declare function sysAdminRoles(): RolesAt;

@@ -3,7 +3,6 @@ import {
   PermissionsMatrix,
   IAllowedQuery,
   Claims,
-  ClaimsInput,
   Roles,
   Actions,
   Resource,
@@ -11,6 +10,7 @@ import {
   RolesAt,
   PermissionsGroup
 } from './types';
+import { baseRoles } from './helpers';
 const BEARER_TOKEN_REGEX = /^Bearer [A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/;
 export class Authorizer {
   private accessToken: string;
@@ -138,20 +138,4 @@ export class Authorizer {
     const group: PermissionsGroup = this.matrix[role] as PermissionsGroup;
     return group[permissionable as Resource] as Actions[];
   }
-}
-
-export function createAuthHeader(claims: ClaimsInput, secret: string, options?: object): string {
-  const accessToken = jwt.sign(claims, secret, options);
-  return `Bearer ${accessToken}`;
-}
-
-export function baseRoles(): RolesAt {
-  return Object.values(Roles).reduce((base, key) => ({ ...base, [key]: [] }), {});
-}
-
-export function sysAdminRoles(): RolesAt {
-  const roles: RolesAt = baseRoles();
-  /// as any below is because RolesAt has possibly undefined members.
-  (Object.keys(roles) as Roles[]).forEach(role => (roles[role] as any).push('*'));
-  return roles;
 }

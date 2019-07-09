@@ -2,7 +2,8 @@ import * as tk from 'timekeeper';
 import * as jwt from 'jsonwebtoken';
 import * as moment from 'moment';
 import { Authorizer, baseRoles, createAuthHeader } from './../index';
-import { Roles, Resource, PermissionSource, Actions } from './../types';
+import { Roles, Resource, PermissionSource, Actions, RolesAt } from './../types';
+import { sysAdminRoles } from '../helpers';
 const SECRET = 'signingsecret';
 describe(`Given: a permission matrix that gives: 
       admin: 'UPDATE', 'READ', 'APPROVE' on a 'Division'
@@ -390,6 +391,20 @@ describe(`Given: a permission matrix that gives:
           });
         });
       });
+    });
+  });
+
+  describe('Feature: helpers.sysAdminRoles() constructs a claims object with just `["*"]`', () => {
+    test.each(Object.values(Roles))('Then: the %s role is present, with "*" in its array', role => {
+      const roles: RolesAt = sysAdminRoles();
+      expect(roles[role as Roles]).toStrictEqual(['*']);
+    });
+  });
+
+  describe('Feature: helpers.baseRoles() returns a claims object with empty arrays for all roles', () => {
+    test.each(Object.values(Roles))('Then: the %s role is present, with "*" in its array', role => {
+      const roles: RolesAt = baseRoles();
+      expect(roles[role as Roles]).toStrictEqual([]);
     });
   });
 });
