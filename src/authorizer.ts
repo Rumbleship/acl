@@ -1,14 +1,12 @@
 import * as jwt from 'jsonwebtoken';
 import {
   PermissionsMatrix,
-  IAllowedQuery,
   Claims,
   Roles,
   Actions,
   Resource,
   PermissionSource,
-  RolesAt,
-  PermissionsGroup
+  RolesAt
 } from './types';
 import { baseRoles } from './helpers';
 const BEARER_TOKEN_REGEX = /^Bearer [A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/;
@@ -61,62 +59,81 @@ export class Authorizer {
     return jwt.verify(this.accessToken, this.secret) as Claims;
   }
 
-  allowedDecorator(
-    matrix: PermissionsMatrix,
+  /**
+   * Type-GraphQL compatible method that singularly answers the question:
+   * "Given the accessToken that this Authorizer represents:
+   *    - can I take an Action against an Authorizable object, given a set of Permissions
+   *      defined by a TypeGraphQL @Authorized decorator"
+   * @param action The action under consideration, typically query|mutation in GQL
+   * @param authorizable In a RESTful world, an object whose entiriety should be authorized.
+   *                      In A GQL world, an object with fields being individually authorized.
+   * @param matrix The permission matrix defined in the GQL model via @Authorized
+   * @param attribute? The attribute that should be used to index into the `authorizable`
+   * @param resource? An override if `authorizeable.constructor.name` is not the group of
+   *                    actions to permission against
+   */
+  public can(
     action: Actions,
-    authorizable: object
-    // against: string
+    authorizable: object,
+    matrix?: PermissionsMatrix,
+    attribute?: string,
+    resource?: Resource
   ) {
     if (!this.roles) {
       throw new Error('Cannot query an unauthenticated Authorizer. Invoke `authenticate()` first.');
     }
+    if ((resource || (authorizable.constructor.name as string)) === 'Object') {
+      throw new Error('Cannot permission on generic `Object`');
+    }
+
     if (this.isUserSysAdmin()) {
       return true;
     }
 
     let access = false;
 
-    (Object.entries(matrix) as [[Roles, PermissionsGroup]]).forEach(
-      ([roleWithPermissionsDefined, actionsAllowed]) => {
-        Object.entries(actionsAllowed as [Resource, Actions[]]).forEach(([resource, actions]) => {
-          const authorizableAttribute =
-            authorizable.constructor.name === resource ? 'id' : `${resource.toLowerCase()}_id`;
-          if (
-            (this.roles as any)[roleWithPermissionsDefined].includes(
-              (authorizable as any)[authorizableAttribute]
-            ) &&
-            actions.includes(action)
-          ) {
-            access = true;
-          }
-        });
-      }
-    );
+    const permissions = matrix || this.matrix;
+    for (const [role, group] of Object.entries(permissions)) {
+      const actions = resource
+        ? (group as any)[resource]
+        : (group as any)[authorizable.constructor.name] || [];
+      // If a PermissionMatrix has been passed in, use it, and implicitly assume we're in TypeGraphQL-land
+      const authorizableAttribute = matrix
+        ? authorizable.constructor.name === resource
+          ? // New services treat `id` as an unwrapable OID (whether hashid or uuid-wrapped)
+            'id'
+          : `${(resource || authorizable.constructor.name).toLowerCase()}_id`
+        : // If a matrix hasn't been passed in, we can safely assume that we're in old Alpha|Mediator code,
+          // where `id` and `hashid` are treated distinctly. Default to picking out `hashid`, but let invoker
+          // override by passing the `attribute` variable.
+          attribute || 'hashid';
 
+      const identifier = (authorizable as any)[authorizableAttribute];
+      const permissionedIdentifiers = (this.roles as any)[role] || [];
+      if (permissionedIdentifiers.includes(identifier) && (actions as any).includes(action)) {
+        access = true;
+      }
+    }
     return access;
   }
 
-  allowed(options: IAllowedQuery): boolean {
-    if (!this.roles) {
-      throw new Error('Cannot query an unauthenticated Authorizer. Invoke `authenticate()` first.');
-    }
-    const { to: permission, from, match: attribute = 'hashid', against: authorizable } = options;
-    let access = false;
-
-    (Object.entries(this.roles) as [[Roles, string[]]]).forEach(
-      ([role, identifiersWithPermissions]) => {
-        const permissions: Actions[] = this.permissionsBeingConsidered(role, authorizable, from);
-        const identifier = (authorizable as any)[attribute];
-        if (
-          this.isUserSysAdmin() ||
-          (identifiersWithPermissions.includes(identifier) && permissions.includes(permission))
-        ) {
-          access = true;
-        }
-      }
-    );
-
-    return access;
+  /**
+   *
+   * @param param0 Deprecated, backward-compatible exported method for old Alpha compatibility.
+   * @warning DO NOT USE!
+   */
+  allowed({
+    to: action,
+    from: resource,
+    match: attribute = 'hashid',
+    against: authorizable
+  }: {
+    to: Actions;
+    from?: Resource;
+    match?: string;
+    against: object;
+  }): boolean {
+    return this.can(action, authorizable, undefined, attribute, resource);
   }
 
   isUserSysAdmin(): boolean {
@@ -126,16 +143,5 @@ export class Authorizer {
     return Object.values(this.roles).every((identifiersWithPermissions: string[] = []) =>
       identifiersWithPermissions.includes('*')
     );
-  }
-  private permissionsBeingConsidered(role: Roles, authorizable: any, from?: Resource): Actions[] {
-    const permissionable = from || (authorizable.constructor.name as string);
-    if (permissionable === 'Object') {
-      throw new Error('Cannot permission on generic `Object`');
-    }
-    if (!this.matrix[role]) {
-      return [];
-    }
-    const group: PermissionsGroup = this.matrix[role] as PermissionsGroup;
-    return group[permissionable as Resource] as Actions[];
   }
 }

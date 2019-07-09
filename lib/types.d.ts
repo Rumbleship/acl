@@ -40,9 +40,3 @@ export interface Claims extends ClaimsInput {
     exp: Date;
     iat: Date;
 }
-export interface IAllowedQuery {
-    to: Actions;
-    from?: Resource;
-    match?: string;
-    against: object;
-}

@@ -47,12 +47,13 @@ describe(`Given: a permission matrix that gives:
           describe.each([Actions.UPDATE, Actions.READ, Actions.APPROVE])('%s:u_123ce', action => {
             let authorized: boolean;
             beforeEach(() => {
-              authorized = authorizer.allowed({
-                to: action,
-                from: Resource.User,
-                match: 'hashid',
-                against: resource
-              });
+              authorized = authorizer.can(action, resource, undefined, 'hashid', Resource.User);
+              // authorized = authorizer.allowed({
+              //   to: action,
+              //   from: Resource.User,
+              //   match: 'hashid',
+              //   against: resource
+              // });
             });
             test('Then: authorization is denied', () => {
               expect(authorized).toBe(false);
@@ -63,12 +64,13 @@ describe(`Given: a permission matrix that gives:
           describe.each([Actions.REQUEST])('%s:u_123ce', action => {
             let authorized: boolean;
             beforeEach(() => {
-              authorized = authorizer.allowed({
-                to: action,
-                from: Resource.User,
-                match: 'hashid',
-                against: resource
-              });
+              authorized = authorizer.can(action, resource, undefined, 'hashid', Resource.User);
+              // authorized = authorizer.allowed({
+              //   to: action,
+              //   from: Resource.User,
+              //   match: 'hashid',
+              //   against: resource
+              // });
             });
             test('Then: authorization is denied', () => {
               expect(authorized).toBe(false);
@@ -100,12 +102,13 @@ describe(`Given: a permission matrix that gives:
           describe.each([Actions.READ, Actions.APPROVE])('%s:b_abcde', action => {
             let authorized: boolean;
             beforeEach(() => {
-              authorized = authorizer.allowed({
-                to: action,
-                from: Resource.Division,
-                match: 'hashid',
-                against: resource
-              });
+              authorized = authorizer.can(action, resource, undefined, 'hashid', Resource.Division);
+              // authorized = authorizer.allowed({
+              //   to: action,
+              //   from: Resource.Division,
+              //   match: 'hashid',
+              //   against: resource
+              // });
             });
             test('Then: authorization is granted', () => {
               expect(authorized).toBe(true);
@@ -116,12 +119,19 @@ describe(`Given: a permission matrix that gives:
           describe.each([Actions.READ, Actions.APPROVE])('%s:u_123ce', action => {
             let authorized: boolean;
             beforeEach(() => {
-              authorized = authorizer.allowed({
-                to: action,
-                from: Resource.Division,
-                match: 'hashid',
-                against: anotherResource
-              });
+              authorized = authorizer.can(
+                action,
+                anotherResource,
+                undefined,
+                'hashid',
+                Resource.Division
+              );
+              // authorized = authorizer.allowed({
+              //   to: action,
+              //   from: Resource.Division,
+              //   match: 'hashid',
+              //   against: anotherResource
+              // });
             });
             test('Then: authorization is denied', () => {
               expect(authorized).toBe(false);
@@ -132,12 +142,19 @@ describe(`Given: a permission matrix that gives:
           describe.each([Actions.UPDATE, Actions.REQUEST])('%s:u_123ce', action => {
             let authorized: boolean;
             beforeEach(() => {
-              authorized = authorizer.allowed({
-                to: action,
-                from: Resource.Division,
-                match: 'hashid',
-                against: anotherResource
-              });
+              authorized = authorizer.can(
+                action,
+                anotherResource,
+                undefined,
+                'hashid',
+                Resource.Division
+              );
+              // authorized = authorizer.allowed({
+              //   to: action,
+              //   from: Resource.Division,
+              //   match: 'hashid',
+              //   against: anotherResource
+              // });
             });
             test('Then: authorization is denied', () => {
               expect(authorized).toBe(false);
@@ -148,12 +165,13 @@ describe(`Given: a permission matrix that gives:
           describe.each([Actions.UPDATE, Actions.REQUEST])('%s:b_abcde', action => {
             let authorized: boolean;
             beforeEach(() => {
-              authorized = authorizer.allowed({
-                to: action,
-                from: Resource.Division,
-                match: 'hashid',
-                against: resource
-              });
+              authorized = authorizer.can(action, resource, undefined, 'hashid', Resource.Division);
+              // authorized = authorizer.allowed({
+              //   to: action,
+              //   from: Resource.Division,
+              //   match: 'hashid',
+              //   against: resource
+              // });
             });
             test('Then: authorization is denied', () => {
               expect(authorized).toBe(false);
@@ -186,12 +204,19 @@ describe(`Given: a permission matrix that gives:
             action => {
               let authorized: boolean;
               beforeAll(() => {
-                authorized = authorizer.allowed({
-                  to: action,
-                  from: Resource.Division,
-                  match: 'hashid',
-                  against: { hashid: 'foo' }
-                });
+                authorized = authorizer.can(
+                  action,
+                  { hashid: 'foo' },
+                  undefined,
+                  'hashid',
+                  Resource.Division
+                );
+                // authorized = authorizer.allowed({
+                //   to: action,
+                //   from: Resource.Division,
+                //   match: 'hashid',
+                //   against: { hashid: 'foo' }
+                // });
               });
               test('Then: authorization is granted', () => {
                 expect(authorized).toBe(true);
@@ -219,69 +244,89 @@ describe(`Given: a permission matrix that gives:
       expect(new Authorizer('Bearer jwt.claims.here', SECRET)).toBeTruthy();
     });
   });
-  describe('Feature: `allowed()` defaults to matching against attribute `hashid` ', () => {
-    describe(`And: two resources:
-        One that should be authorized against 'id'
-        One that should be authorized against its 'hashid' `, () => {
-      const id = 'b_abcde';
-      const hashid = 'u_123de';
-      const permissionedOnId = { id };
-      const permissionedOnHashid = { hashid };
-      describe('When: requesting permissions without specifying a field, against the hashid record', () => {
-        let authorizer: Authorizer;
-        const authHeader = createAuthHeader(
-          {
-            roles: {
-              [Roles.ADMIN]: [id, hashid],
-              [Roles.USER]: [],
-              [Roles.PENDING]: []
-            }
-          },
-          SECRET
-        );
-        beforeAll(() => {
-          authorizer = new Authorizer(authHeader, SECRET, PermissionSource.MATRIX, matrix);
-          authorizer.authenticate();
+  describe('Feature: `can()` defaults to matching against attribute `hashid` ', () => {
+    describe('And: the permission matrix assigned at instantiation is not overriden at invocation', () => {
+      describe(`And: two resources:
+          One that should be authorized against 'id'
+          One that should be authorized against its 'hashid' `, () => {
+        const id = 'b_abcde';
+        const hashid = 'u_123de';
+        const permissionedOnId = { id };
+        const permissionedOnHashid = { hashid };
+        describe('When: requesting permissions without specifying a field, against the hashid record', () => {
+          let authorizer: Authorizer;
+          const authHeader = createAuthHeader(
+            {
+              roles: {
+                [Roles.ADMIN]: [id, hashid],
+                [Roles.USER]: [],
+                [Roles.PENDING]: []
+              }
+            },
+            SECRET
+          );
+          beforeAll(() => {
+            authorizer = new Authorizer(authHeader, SECRET, PermissionSource.MATRIX, matrix);
+            authorizer.authenticate();
+          });
+          test('Then: an allowed permission should succeed', () => {
+            expect(
+              authorizer.can(
+                Actions.READ,
+                permissionedOnHashid,
+                undefined,
+                undefined,
+                Resource.Division
+              )
+            ).toBe(true);
+            expect(
+              authorizer.allowed({
+                to: Actions.READ,
+                from: Resource.Division,
+                against: permissionedOnHashid
+              })
+            ).toBe(true);
+          });
         });
-        test('Then: an allowed permission should succeed', () => {
-          expect(
-            authorizer.allowed({
-              to: Actions.READ,
-              from: Resource.Division,
-              against: permissionedOnHashid
-            })
-          ).toBe(true);
-        });
-      });
-      describe('When: requesting permissions without specifying a field, against the id record', () => {
-        let authorizer: Authorizer;
-        const authHeader = createAuthHeader(
-          {
-            roles: {
-              [Roles.ADMIN]: [id, hashid],
-              [Roles.USER]: [],
-              [Roles.PENDING]: []
-            }
-          },
-          SECRET
-        );
-        beforeAll(() => {
-          authorizer = new Authorizer(authHeader, SECRET, PermissionSource.MATRIX, matrix);
-          authorizer.authenticate();
-        });
-        test('Then: an allowed permission should be denied', () => {
-          expect(
-            authorizer.allowed({
-              to: Actions.READ,
-              from: Resource.Division,
-              against: permissionedOnId
-            })
-          ).toBe(false);
+        describe('When: requesting permissions without specifying a field, against the id record', () => {
+          let authorizer: Authorizer;
+          const authHeader = createAuthHeader(
+            {
+              roles: {
+                [Roles.ADMIN]: [id, hashid],
+                [Roles.USER]: [],
+                [Roles.PENDING]: []
+              }
+            },
+            SECRET
+          );
+          beforeAll(() => {
+            authorizer = new Authorizer(authHeader, SECRET, PermissionSource.MATRIX, matrix);
+            authorizer.authenticate();
+          });
+          test('Then: an allowed permission should be denied', () => {
+            expect(
+              authorizer.can(
+                Actions.READ,
+                permissionedOnId,
+                undefined,
+                undefined,
+                Resource.Division
+              )
+            ).toBe(false);
+            expect(
+              authorizer.allowed({
+                to: Actions.READ,
+                from: Resource.Division,
+                against: permissionedOnId
+              })
+            ).toBe(false);
+          });
         });
       });
     });
   });
-  describe(`Feature: 'allowed()' PermissionGroup defaults to constructor of passed 'AuthorizableResource'
+  describe(`Feature: 'can()' PermissionGroup defaults to constructor of passed 'AuthorizableResource'
     and can be explicitly specified as 'from'`, () => {
     describe(`Given: a named class 'User' and an anoymous object populated with same identifier: 'u_12345'`, () => {
       const hashid = 'u_12345';
@@ -309,6 +354,7 @@ describe(`Given: a permission matrix that gives:
         authorizer.authenticate();
         describe(`When: requesting authorization without specifying 'from'`, () => {
           test('Then: the classResource should succeed', () => {
+            expect(authorizer.can(Actions.DELETE, classResource)).toBe(true);
             expect(
               authorizer.allowed({
                 to: Actions.DELETE,
@@ -317,6 +363,9 @@ describe(`Given: a permission matrix that gives:
             ).toBe(true);
           });
           test('Then: the objectResource should throw', () => {
+            expect(() => authorizer.can(Actions.DELETE, objectResource)).toThrow(
+              'Cannot permission on generic `Object`'
+            );
             expect(() =>
               authorizer.allowed({
                 to: Actions.DELETE,
@@ -326,7 +375,10 @@ describe(`Given: a permission matrix that gives:
           });
         });
         describe(`When: requesting authorization and specifying 'from'`, () => {
-          test('Then: the `from` should override default should succeed', () => {
+          test('Then: the `from` should override default', () => {
+            expect(
+              authorizer.can(Actions.READ, classResource, undefined, undefined, Resource.Division)
+            ).toBe(true);
             expect(
               authorizer.allowed({
                 to: Actions.READ,
