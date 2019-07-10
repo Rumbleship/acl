@@ -7,6 +7,9 @@ export declare enum Roles {
     USER = "user",
     PENDING = "pending"
 }
+export declare enum Scope {
+    SYSADMIN = "sysadmin"
+}
 export declare enum Actions {
     CREATE = "create",
     READ = "read",
@@ -35,6 +38,7 @@ export interface ClaimsInput {
     user?: string;
     client?: string;
     roles: RolesAt;
+    scope: Scope[];
 }
 export interface Claims extends ClaimsInput {
     exp: Date;

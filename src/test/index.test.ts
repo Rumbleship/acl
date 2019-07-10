@@ -2,7 +2,7 @@ import * as tk from 'timekeeper';
 import * as jwt from 'jsonwebtoken';
 import * as moment from 'moment';
 import { Authorizer, baseRoles, createAuthHeader } from './../index';
-import { Roles, Resource, PermissionSource, Actions, RolesAt } from './../types';
+import { Roles, Resource, PermissionSource, Actions, RolesAt, Scope } from './../types';
 import { sysAdminRoles } from '../helpers';
 const SECRET = 'signingsecret';
 describe(`Given: a permission matrix that gives: 
@@ -35,7 +35,8 @@ describe(`Given: a permission matrix that gives:
               [Roles.ADMIN]: [id, anotherId],
               [Roles.USER]: [],
               [Roles.PENDING]: []
-            }
+            },
+            scope: []
           },
           SECRET
         );
@@ -94,7 +95,8 @@ describe(`Given: a permission matrix that gives:
               [Roles.ADMIN]: [],
               [Roles.USER]: [id],
               [Roles.PENDING]: []
-            }
+            },
+            scope: []
           },
           SECRET
         );
@@ -187,7 +189,8 @@ describe(`Given: a permission matrix that gives:
               [Roles.ADMIN]: ['*'],
               [Roles.USER]: ['*'],
               [Roles.PENDING]: ['*']
-            }
+            },
+            scope: [Scope.SYSADMIN]
           },
           SECRET
         );
@@ -254,7 +257,8 @@ describe(`Given: a permission matrix that gives:
             [Roles.ADMIN]: [id, hashid],
             [Roles.USER]: [],
             [Roles.PENDING]: []
-          }
+          },
+          scope: []
         },
         SECRET
       );
@@ -358,7 +362,8 @@ describe(`Given: a permission matrix that gives:
               [Roles.ADMIN]: [hashid, division_id],
               [Roles.USER]: [],
               [Roles.PENDING]: []
-            }
+            },
+            scope: []
           },
           SECRET
         );
