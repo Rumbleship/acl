@@ -24,6 +24,7 @@
     "babel-core": "^7.0.0-0",
     "babel-jest": "^24.1.0",
     "coveralls": "^3.0.3",
+    "moment": "^2.24.0",
     "jest": "^24.0.0",
     "prettier": "^1.14.3",
     "prettier-tslint": "^0.4.0",
@@ -41,7 +42,7 @@
   "jest": {
     "testEnvironment": "node"
   },
-  "dependencies": {
+  "peerDependencies": {
     "jsonwebtoken": "^8.5.1",
     "moment": "^2.24.0",
     "reflect-metadata": "^0.1.13"
