@@ -3,10 +3,6 @@ export declare enum Roles {
     USER = "user",
     PENDING = "pending"
 }
-export declare enum Scopes {
-    SYSADMIN = "system:*",
-    BANKINGADMIN = "banking:*"
-}
 export declare enum Actions {
     CREATE = "create",
     READ = "read",
@@ -20,6 +16,10 @@ export declare enum Resource {
     Division = "Division",
     User = "User",
     Order = "Order"
+}
+export declare enum Scopes {
+    SYSADMIN = "system:*",
+    BANKINGADMIN = "banking:*"
 }
 export declare type PermissionsGroup = {
     [key in Resource]?: Actions[];

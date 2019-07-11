@@ -3,12 +3,6 @@ export enum Roles {
   USER = 'user',
   PENDING = 'pending'
 }
-
-export enum Scopes {
-  SYSADMIN = 'system:*',
-  BANKINGADMIN = 'banking:*'
-}
-
 export enum Actions {
   CREATE = 'create',
   READ = 'read',
@@ -18,11 +12,15 @@ export enum Actions {
   APPROVE = 'approve',
   QUERY = 'query'
 }
-
 export enum Resource {
   Division = 'Division',
   User = 'User',
   Order = 'Order'
+}
+
+export enum Scopes {
+  SYSADMIN = 'system:*',
+  BANKINGADMIN = 'banking:*'
 }
 
 export type PermissionsGroup = {
