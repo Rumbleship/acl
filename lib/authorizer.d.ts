@@ -19,11 +19,14 @@ export declare class Authorizer {
      * @param authorizable In a RESTful world, an object whose entiriety should be authorized.
      *                      In A GQL world, an object with fields being individually authorized.
      * @param matrix The permission matrix defined in the GQL model via Authorized decorator
+     *                --or-- A list of roles that generically have access without inflecting
+     *                  on the identity of a record|resource. Useful for authorizing APIs in TGQL
+     *                  e.g. mutators and queries
      * @param attribute? The attribute that should be used to index into the `authorizable`
      * @param resource? An override if `authorizeable.constructor.name` is not the group of
      *                    actions to permission against
      */
-    can(action: Actions, authorizable: object, matrix?: PermissionsMatrix, attribute?: string, resource?: Resource): boolean;
+    can(action: Actions, authorizable: object, matrix?: PermissionsMatrix | string[], attribute?: string, resource?: Resource): boolean;
     /**
      *
      * @param param0 Deprecated, backward-compatible exported method for old Alpha compatibility.

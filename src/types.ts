@@ -5,7 +5,9 @@ export enum PermissionSource {
 export enum Roles {
   ADMIN = 'admin',
   USER = 'user',
-  PENDING = 'pending'
+  PENDING = 'pending',
+  SYSADMIN = 'sysadmin',
+  BANKINGADMIN = 'bankingadmin'
 }
 export enum Scope {
   SYSADMIN = 'sysadmin'
