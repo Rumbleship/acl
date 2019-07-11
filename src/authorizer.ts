@@ -9,7 +9,7 @@ import {
   RolesAt,
   PermissionsGroup
 } from './types';
-import { baseRoles } from './helpers';
+import { baseRoles, getArrayFromOverloadedRest } from './helpers';
 const BEARER_TOKEN_REGEX = /^Bearer [A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/;
 export class Authorizer {
   private accessToken: string;
@@ -88,7 +88,7 @@ export class Authorizer {
       return false;
     }
 
-    if (this.isUserSysAdmin()) {
+    if (this.inScope(Scopes.SYSADMIN)) {
       return true;
     }
 
@@ -134,29 +134,13 @@ export class Authorizer {
     return access;
   }
 
-  /**
-   *
-   * @param param0 Deprecated, backward-compatible exported method for old Alpha compatibility.
-   * @warning DO NOT USE!
-   */
-  // allowed({
-  //   to: action,
-  //   from: resource,
-  //   match: attribute = 'hashid',
-  //   against: authorizable
-  // }: {
-  //   to: Actions;
-  //   from?: Resource;
-  //   match?: string;
-  //   against: object;
-  // }): boolean {
-  //   return this.can(action, authorizable, undefined, attribute, resource);
-  // }
-
-  /**
-   * Convenience method for Alpha: NOT FOR USE ELSEWHERE
-   */
-  isUserSysAdmin(): boolean {
-    return this.scopes.includes(Scopes.SYSADMIN);
+  inScope(...scopeOrScopeArray: Array<Scopes | Scopes[]>): boolean;
+  inScope(...scopeOrScopeArray: Scopes[]): boolean {
+    for (const scope of this.scopes) {
+      if (getArrayFromOverloadedRest(scopeOrScopeArray).includes(scope)) {
+        return true;
+      }
+    }
+    return false;
   }
 }

@@ -138,8 +138,8 @@ describe(`Given: a permission matrix that gives:
           authorizer = new Authorizer(authHeader, SECRET);
           authorizer.authenticate();
         });
-        test('Then: `authorizer.isUserSysAdmin() returns true', () => {
-          expect(authorizer.isUserSysAdmin()).toBe(true);
+        test('Then: The authorizer can successfully scope-check as a SysAdmin', () => {
+          expect(authorizer.inScope(Scopes.SYSADMIN)).toBe(true);
         });
         describe('When: asking for any action against a resource', () => {
           describe.each([Actions.UPDATE, Actions.READ, Actions.APPROVE, Actions.REQUEST])(
@@ -338,6 +338,38 @@ describe(`Given: a permission matrix that gives:
             expect(() => authorizer.authenticate()).toThrow();
           });
         });
+      });
+    });
+  });
+  describe('Feature: `inScope()` accepts an array or a single scope', () => {
+    const id = 'u_12345';
+    const authHeader = createAuthHeader(
+      {
+        roles: {
+          [Roles.ADMIN]: [id],
+          [Roles.USER]: [],
+          [Roles.PENDING]: []
+        },
+        scopes: [Scopes.SYSADMIN]
+      },
+      SECRET
+    );
+    const authorizer = new Authorizer(authHeader, SECRET);
+    authorizer.authenticate();
+    describe('When querying inScope with a single parameter', () => {
+      test('Then: a missing scope fails', () => {
+        expect(authorizer.inScope(Scopes.BANKINGADMIN)).toBe(false);
+      });
+      test('Then: a present scope passes', () => {
+        expect(authorizer.inScope(Scopes.SYSADMIN)).toBe(true);
+      });
+    });
+    describe('When querying inScope with an array parameter', () => {
+      test('Then: a missing scope fails', () => {
+        expect(authorizer.inScope([Scopes.BANKINGADMIN])).toBe(false);
+      });
+      test('Then: a present scope passes', () => {
+        expect(authorizer.inScope([Scopes.SYSADMIN])).toBe(true);
       });
     });
   });

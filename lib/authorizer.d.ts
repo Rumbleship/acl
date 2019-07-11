@@ -1,4 +1,4 @@
-import { PermissionsMatrix, Claims, Actions, Resource, RolesAt } from './types';
+import { PermissionsMatrix, Claims, Scopes, Actions, Resource, RolesAt } from './types';
 export declare class Authorizer {
     private authorizationHeader;
     private secret;
@@ -26,13 +26,5 @@ export declare class Authorizer {
      *                    actions to permission agaiXnst
      */
     can(action: Actions, authorizable: object, matrix: PermissionsMatrix[] | string[], attribute?: string, resource?: Resource): boolean;
-    /**
-     *
-     * @param param0 Deprecated, backward-compatible exported method for old Alpha compatibility.
-     * @warning DO NOT USE!
-     */
-    /**
-     * Convenience method for Alpha: NOT FOR USE ELSEWHERE
-     */
-    isUserSysAdmin(): boolean;
+    inScope(...scopeOrScopeArray: Array<Scopes | Scopes[]>): boolean;
 }
