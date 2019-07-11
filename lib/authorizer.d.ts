@@ -25,6 +25,6 @@ export declare class Authorizer {
      * @param resource? An override if `authorizeable.constructor.name` is not the group of
      *                    actions to permission agaiXnst
      */
-    can(action: Actions, authorizable: object, matrix: PermissionsMatrix[] | string[], attribute?: string, resource?: Resource): boolean;
+    can(action: Actions, authorizable: object, matrix: PermissionsMatrix[], attribute?: string, resource?: Resource): boolean;
     inScope(...scopeOrScopeArray: Array<Scopes | Scopes[]>): boolean;
 }

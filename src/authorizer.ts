@@ -15,10 +15,6 @@ export class Authorizer {
   private accessToken: string;
   private roles?: RolesAt;
   private scopes: Scopes[] = [];
-  // private user?: string;
-  // private name?: string;
-  // private client?: string;
-  // private exp?: Date;
   constructor(private authorizationHeader: string, private secret: string) {
     if (!this.authorizationHeader) {
       throw new Error('`authorizationHeader` is required by Authorizer');
@@ -69,7 +65,7 @@ export class Authorizer {
   public can(
     action: Actions,
     authorizable: object,
-    matrix: PermissionsMatrix[] | string[],
+    matrix: PermissionsMatrix[],
     attribute?: string,
     resource?: Resource
   ) {
@@ -79,57 +75,50 @@ export class Authorizer {
 
     let access = false;
 
-    if (typeof matrix[0] === 'string') {
-      for (const scope of this.scopes) {
-        if (matrix.includes(scope)) {
-          return true;
-        }
-      }
-      return false;
-    }
-
     if (this.inScope(Scopes.SYSADMIN)) {
       return true;
     }
 
-    const permissions = matrix[0];
-    for (const [role, group] of Object.entries(permissions)) {
-      const permissionedIdentifiers = (this.roles as any)[role] || [];
-      /**
-       * If a resource has been passed in, use that to select the group of permissions we're interested in
-       * If not, guess at the group by inflecting on the name of the record we're authorizing
-       */
-      const actions = resource
-        ? (group as any)[resource] || []
-        : (group as any)[authorizable.constructor.name] || [];
+    for (const permissions of matrix) {
+      for (const [role, group] of Object.entries(permissions)) {
+        const permissionedIdentifiers = (this.roles as any)[role] || [];
+        /**
+         * If a resource has been passed in, use that to select the group of permissions we're interested in
+         * If not, guess at the group by inflecting on the name of the record we're authorizing
+         */
+        const actions = resource
+          ? (group as any)[resource] || []
+          : (group as any)[authorizable.constructor.name] || [];
 
-      if (attribute) {
-        if (
-          permissionedIdentifiers.includes((authorizable as any)[attribute]) &&
-          (actions as any).includes(action)
-        ) {
-          access = true;
-        }
-      }
-
-      // passed in overrides didn't get us access; now we have to search.
-      if (!access) {
-        for (const [resourceWithPermissions, allowedActions] of Object.entries(
-          group as PermissionsGroup
-        )) {
-          const authorizableAttribute =
-            resourceWithPermissions === resource
-              ? 'id'
-              : `${resourceWithPermissions.toLowerCase()}_id`;
-          const identifier = (authorizable as any)[authorizableAttribute];
+        if (attribute) {
           if (
-            permissionedIdentifiers.includes(identifier) &&
-            (allowedActions as any).includes(action)
+            permissionedIdentifiers.includes((authorizable as any)[attribute]) &&
+            (actions as any).includes(action)
           ) {
             access = true;
           }
         }
+
+        // passed in overrides didn't get us access; now we have to search.
+        if (!access) {
+          for (const [resourceWithPermissions, allowedActions] of Object.entries(
+            group as PermissionsGroup
+          )) {
+            const authorizableAttribute =
+              resourceWithPermissions === resource
+                ? 'id'
+                : `${resourceWithPermissions.toLowerCase()}_id`;
+            const identifier = (authorizable as any)[authorizableAttribute];
+            if (
+              permissionedIdentifiers.includes(identifier) &&
+              (allowedActions as any).includes(action)
+            ) {
+              access = true;
+            }
+          }
+        }
       }
+      return access;
     }
     return access;
   }
