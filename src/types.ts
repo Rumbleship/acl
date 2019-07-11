@@ -1,16 +1,12 @@
-export enum PermissionSource {
-  MATRIX = 'matrix',
-  DECORATOR = 'decorator'
-}
 export enum Roles {
   ADMIN = 'admin',
   USER = 'user',
-  PENDING = 'pending',
+  PENDING = 'pending'
+}
+
+export enum Scopes {
   SYSADMIN = 'sysadmin',
   BANKINGADMIN = 'bankingadmin'
-}
-export enum Scope {
-  SYSADMIN = 'sysadmin'
 }
 
 export enum Actions {
@@ -49,7 +45,7 @@ export interface ClaimsInput {
   user?: string;
   client?: string;
   roles: RolesAt;
-  scope: Scope[];
+  scopes: Scopes[];
 }
 export interface Claims extends ClaimsInput {
   exp: Date;

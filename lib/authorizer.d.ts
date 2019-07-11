@@ -1,12 +1,11 @@
-import { PermissionsMatrix, Claims, Actions, Resource, PermissionSource, RolesAt } from './types';
+import { PermissionsMatrix, Claims, Actions, Resource, RolesAt } from './types';
 export declare class Authorizer {
     private authorizationHeader;
     private secret;
-    private sourceType;
-    private matrix;
     private accessToken;
     private roles?;
-    constructor(authorizationHeader: string, secret: string, sourceType?: PermissionSource, matrix?: PermissionsMatrix);
+    private scopes;
+    constructor(authorizationHeader: string, secret: string);
     authenticate(): boolean;
     getRoles(): RolesAt;
     getClaims(): Claims;
@@ -24,19 +23,16 @@ export declare class Authorizer {
      *                  e.g. mutators and queries
      * @param attribute? The attribute that should be used to index into the `authorizable`
      * @param resource? An override if `authorizeable.constructor.name` is not the group of
-     *                    actions to permission against
+     *                    actions to permission agaiXnst
      */
-    can(action: Actions, authorizable: object, matrix?: PermissionsMatrix | string[], attribute?: string, resource?: Resource): boolean;
+    can(action: Actions, authorizable: object, matrix: PermissionsMatrix[] | string[], attribute?: string, resource?: Resource): boolean;
     /**
      *
      * @param param0 Deprecated, backward-compatible exported method for old Alpha compatibility.
      * @warning DO NOT USE!
      */
-    allowed({ to: action, from: resource, match: attribute, against: authorizable }: {
-        to: Actions;
-        from?: Resource;
-        match?: string;
-        against: object;
-    }): boolean;
+    /**
+     * Convenience method for Alpha: NOT FOR USE ELSEWHERE
+     */
     isUserSysAdmin(): boolean;
 }

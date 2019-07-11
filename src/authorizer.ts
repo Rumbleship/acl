@@ -2,10 +2,10 @@ import * as jwt from 'jsonwebtoken';
 import {
   PermissionsMatrix,
   Claims,
-  Roles,
+  // Roles,
+  Scopes,
   Actions,
   Resource,
-  PermissionSource,
   RolesAt,
   PermissionsGroup
 } from './types';
@@ -14,20 +14,12 @@ const BEARER_TOKEN_REGEX = /^Bearer [A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-
 export class Authorizer {
   private accessToken: string;
   private roles?: RolesAt;
+  private scopes: Scopes[] = [];
   // private user?: string;
   // private name?: string;
   // private client?: string;
   // private exp?: Date;
-  constructor(
-    private authorizationHeader: string,
-    private secret: string,
-    private sourceType: PermissionSource = PermissionSource.MATRIX,
-    private matrix: PermissionsMatrix = {
-      [Roles.ADMIN]: {},
-      [Roles.USER]: {},
-      [Roles.PENDING]: {}
-    }
-  ) {
+  constructor(private authorizationHeader: string, private secret: string) {
     if (!this.authorizationHeader) {
       throw new Error('`authorizationHeader` is required by Authorizer');
     }
@@ -40,14 +32,12 @@ export class Authorizer {
     if (!this.secret) {
       throw new Error('`secret` is required by Authorizer');
     }
-    if (this.sourceType === PermissionSource.MATRIX && !this.matrix) {
-      throw new Error('Cannot use sourceType `MATRIX` without specifying the matrix to reference');
-    }
   }
 
   authenticate(): boolean {
-    const { roles } = jwt.verify(this.accessToken, this.secret) as Claims;
+    const { roles, scopes } = jwt.verify(this.accessToken, this.secret) as Claims;
     this.roles = roles;
+    this.scopes = scopes;
     return !!this.roles;
   }
 
@@ -74,38 +64,35 @@ export class Authorizer {
    *                  e.g. mutators and queries
    * @param attribute? The attribute that should be used to index into the `authorizable`
    * @param resource? An override if `authorizeable.constructor.name` is not the group of
-   *                    actions to permission against
+   *                    actions to permission agaiXnst
    */
   public can(
     action: Actions,
     authorizable: object,
-    matrix?: PermissionsMatrix | string[],
+    matrix: PermissionsMatrix[] | string[],
     attribute?: string,
     resource?: Resource
   ) {
     if (!this.roles) {
       throw new Error('Cannot query an unauthenticated Authorizer. Invoke `authenticate()` first.');
     }
-    if ((resource || (authorizable.constructor.name as string)) === 'Object') {
-      throw new Error('Cannot permission on generic `Object`');
-    }
-
-    if (this.isUserSysAdmin()) {
-      return true;
-    }
 
     let access = false;
 
-    if (Array.isArray(matrix)) {
-      for (const role in Roles) {
-        if (matrix.includes(role)) {
+    if (typeof matrix[0] === 'string') {
+      for (const scope of this.scopes) {
+        if (matrix.includes(scope)) {
           return true;
         }
       }
       return false;
     }
 
-    const permissions = matrix || this.matrix;
+    if (this.isUserSysAdmin()) {
+      return true;
+    }
+
+    const permissions = matrix[0];
     for (const [role, group] of Object.entries(permissions)) {
       const permissionedIdentifiers = (this.roles as any)[role] || [];
       /**
@@ -113,19 +100,16 @@ export class Authorizer {
        * If not, guess at the group by inflecting on the name of the record we're authorizing
        */
       const actions = resource
-        ? (group as any)[resource]
+        ? (group as any)[resource] || []
         : (group as any)[authorizable.constructor.name] || [];
-      /**
-       * If an attribute to authorize against is passed, it should be used.
-       *
-       * Otherwise, use presence|absence of a passed PermissionsMatrix to determine if:
-       * - default to 'id' (in TypeGraphQL land, where `id` can be wrapped and unwrapped to its OID
-       * - default to 'hashid' (legacy), where `id` and `hashid` are stored separately in DB
-       */
-      let authorizableAttribute = attribute ? attribute : matrix ? 'id' : 'hashid';
-      let identifier = (authorizable as any)[authorizableAttribute];
-      if (permissionedIdentifiers.includes(identifier) && (actions as any).includes(action)) {
-        access = true;
+
+      if (attribute) {
+        if (
+          permissionedIdentifiers.includes((authorizable as any)[attribute]) &&
+          (actions as any).includes(action)
+        ) {
+          access = true;
+        }
       }
 
       // passed in overrides didn't get us access; now we have to search.
@@ -133,8 +117,11 @@ export class Authorizer {
         for (const [resourceWithPermissions, allowedActions] of Object.entries(
           group as PermissionsGroup
         )) {
-          authorizableAttribute = `${resourceWithPermissions.toLowerCase()}_id`;
-          identifier = (authorizable as any)[authorizableAttribute];
+          const authorizableAttribute =
+            resourceWithPermissions === resource
+              ? 'id'
+              : `${resourceWithPermissions.toLowerCase()}_id`;
+          const identifier = (authorizable as any)[authorizableAttribute];
           if (
             permissionedIdentifiers.includes(identifier) &&
             (allowedActions as any).includes(action)
@@ -152,26 +139,24 @@ export class Authorizer {
    * @param param0 Deprecated, backward-compatible exported method for old Alpha compatibility.
    * @warning DO NOT USE!
    */
-  allowed({
-    to: action,
-    from: resource,
-    match: attribute = 'hashid',
-    against: authorizable
-  }: {
-    to: Actions;
-    from?: Resource;
-    match?: string;
-    against: object;
-  }): boolean {
-    return this.can(action, authorizable, undefined, attribute, resource);
-  }
+  // allowed({
+  //   to: action,
+  //   from: resource,
+  //   match: attribute = 'hashid',
+  //   against: authorizable
+  // }: {
+  //   to: Actions;
+  //   from?: Resource;
+  //   match?: string;
+  //   against: object;
+  // }): boolean {
+  //   return this.can(action, authorizable, undefined, attribute, resource);
+  // }
 
+  /**
+   * Convenience method for Alpha: NOT FOR USE ELSEWHERE
+   */
   isUserSysAdmin(): boolean {
-    if (!this.roles) {
-      return false;
-    }
-    return Object.values(this.roles).every((identifiersWithPermissions: string[] = []) =>
-      identifiersWithPermissions.includes('*')
-    );
+    return this.scopes.includes(Scopes.SYSADMIN);
   }
 }
