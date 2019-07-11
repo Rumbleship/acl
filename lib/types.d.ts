@@ -4,8 +4,8 @@ export declare enum Roles {
     PENDING = "pending"
 }
 export declare enum Scopes {
-    SYSADMIN = "sysadmin",
-    BANKINGADMIN = "bankingadmin"
+    SYSADMIN = "system:*",
+    BANKINGADMIN = "banking:*"
 }
 export declare enum Actions {
     CREATE = "create",

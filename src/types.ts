@@ -5,8 +5,8 @@ export enum Roles {
 }
 
 export enum Scopes {
-  SYSADMIN = 'sysadmin',
-  BANKINGADMIN = 'bankingadmin'
+  SYSADMIN = 'system:*',
+  BANKINGADMIN = 'banking:*'
 }
 
 export enum Actions {
