@@ -19,7 +19,8 @@ export declare enum Resource {
 }
 export declare enum Scopes {
     SYSADMIN = "system:*",
-    BANKINGADMIN = "banking:*"
+    BANKINGADMIN = "banking:*",
+    ORDERADMIN = "orders:*"
 }
 export declare type PermissionsGroup = {
     [key in Resource]?: Actions[];

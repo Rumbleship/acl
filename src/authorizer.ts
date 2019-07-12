@@ -135,6 +135,6 @@ export class Authorizer {
         return true;
       }
     }
-    return false;
+    return this.scopes.includes(Scopes.SYSADMIN);
   }
 }

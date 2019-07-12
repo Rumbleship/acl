@@ -306,6 +306,29 @@ describe(`Given: a permission matrix that gives:
       });
     });
   });
+  describe('Feature: `inScope()` always returns true for a system administrator', () => {
+    describe('Given: A user with an authHeader that contains SYSADMIN scope', () => {
+      const id = 'u_12345';
+      const authHeader = createAuthHeader(
+        {
+          roles: {
+            [Roles.ADMIN]: [id],
+            [Roles.USER]: [],
+            [Roles.PENDING]: []
+          },
+          scopes: [Scopes.SYSADMIN]
+        },
+        SECRET
+      );
+      const authorizer = new Authorizer(authHeader, SECRET);
+      authorizer.authenticate();
+      describe('When: asking for a more specific scope, e.g. BANKINGADMIN', () => {
+        test('Then: `inScope()` returns true', () => {
+          expect(authorizer.inScope(Scopes.BANKINGADMIN)).toBe(true);
+        });
+      });
+    });
+  });
   describe('Feature: `inScope()` accepts an array or a single scope', () => {
     const id = 'u_12345';
     const authHeader = createAuthHeader(
@@ -315,7 +338,7 @@ describe(`Given: a permission matrix that gives:
           [Roles.USER]: [],
           [Roles.PENDING]: []
         },
-        scopes: [Scopes.SYSADMIN]
+        scopes: [Scopes.BANKINGADMIN]
       },
       SECRET
     );
@@ -323,18 +346,18 @@ describe(`Given: a permission matrix that gives:
     authorizer.authenticate();
     describe('When querying inScope with a single parameter', () => {
       test('Then: a missing scope fails', () => {
-        expect(authorizer.inScope(Scopes.BANKINGADMIN)).toBe(false);
+        expect(authorizer.inScope(Scopes.ORDERADMIN)).toBe(false);
       });
       test('Then: a present scope passes', () => {
-        expect(authorizer.inScope(Scopes.SYSADMIN)).toBe(true);
+        expect(authorizer.inScope(Scopes.BANKINGADMIN)).toBe(true);
       });
     });
     describe('When querying inScope with an array parameter', () => {
       test('Then: a missing scope fails', () => {
-        expect(authorizer.inScope([Scopes.BANKINGADMIN])).toBe(false);
+        expect(authorizer.inScope([Scopes.ORDERADMIN])).toBe(false);
       });
       test('Then: a present scope passes', () => {
-        expect(authorizer.inScope([Scopes.SYSADMIN])).toBe(true);
+        expect(authorizer.inScope([Scopes.BANKINGADMIN])).toBe(true);
       });
     });
   });
