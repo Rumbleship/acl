@@ -86,15 +86,25 @@ export class Authorizer {
          * If a resource has been passed in, use that to select the group of permissions we're interested in
          * If not, guess at the group by inflecting on the name of the record we're authorizing
          */
-        const actions = resource
-          ? (group as any)[resource] || []
-          : (group as any)[authorizable.constructor.name] || [];
 
         if (attribute) {
+          const actions = resource
+            ? (group as any)[resource] || []
+            : (group as any)[authorizable.constructor.name] || [];
           if (
             permissionedIdentifiers.includes((authorizable as any)[attribute]) &&
             (actions as any).includes(action)
           ) {
+            access = true;
+          }
+        }
+
+        if (resource) {
+          const authorizableAttribute =
+            resource === authorizable.constructor.name ? 'id' : `${resource.toLowerCase()}_id`;
+          const identifier = (authorizable as any)[authorizableAttribute];
+          const actions = (group as any)[resource] || [];
+          if (permissionedIdentifiers.includes(identifier) && actions.includes(action)) {
             access = true;
           }
         }
@@ -105,7 +115,7 @@ export class Authorizer {
             group as PermissionsGroup
           )) {
             const authorizableAttribute =
-              resourceWithPermissions === resource
+              !resource && resourceWithPermissions === authorizable.constructor.name
                 ? 'id'
                 : `${resourceWithPermissions.toLowerCase()}_id`;
             const identifier = (authorizable as any)[authorizableAttribute];
@@ -130,6 +140,6 @@ export class Authorizer {
         return true;
       }
     }
-    return this.scopes.includes(Scopes.SYSADMIN);
+    return false;
   }
 }

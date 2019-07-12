@@ -56,9 +56,7 @@ describe(`Given: a permission matrix that gives:
         describe('When: asking for an unauthorized action against an owned resource with a non-intersecting set of Actions defined', () => {
           describe.each([Actions.REQUEST])('%s:u_123ce', action => {
             test('Then: authorization is denied', () => {
-              expect(authorizer.can(action, resource, [matrix], 'hashid', Resource.User)).toBe(
-                false
-              );
+              expect(authorizer.can(action, resource, [matrix], 'hashid')).toBe(false);
             });
           });
         });
@@ -173,72 +171,27 @@ describe(`Given: a permission matrix that gives:
       expect(new Authorizer('Bearer jwt.claims.here', SECRET)).toBeTruthy();
     });
   });
-  describe('Feature: authorization defaults to matching `hashid` or `id` based on whether the permission matrix is overridden at invocation', () => {
-    describe(`And: two resources:
-          One that should be authorized against 'id'
-          One that should be authorized against its 'hashid' `, () => {
-      const id = 'b_abcde';
-      const hashid = 'u_123de';
-      const permissionedOnId = { id };
-      const permissionedOnHashid = { hashid };
-      const authHeader = createAuthHeader(
-        {
-          roles: {
-            [Roles.ADMIN]: [id, hashid],
-            [Roles.USER]: [],
-            [Roles.PENDING]: []
-          },
-          scopes: []
-        },
-        SECRET
-      );
-      describe('And: the permission matrix assigned at instantiation is not overriden at invocation', () => {
-        let authorizer: Authorizer;
-        beforeAll(() => {
-          authorizer = new Authorizer(authHeader, SECRET);
-          authorizer.authenticate();
-        });
-        describe('When: requesting permissions without specifying a field, against the hashid record', () => {
-          test('Then: authorization for an allowed permission via `can()` is granted', () => {
-            expect(
-              authorizer.can(
-                Actions.READ,
-                permissionedOnHashid,
-                [matrix],
-                undefined,
-                Resource.Division
-              )
-            ).toBe(true);
-          });
-        });
-        describe('When: requesting permissions without specifying a field, against the id record', () => {
-          test('Then: authorization for an allowed permission via `can()` is denied', () => {
-            expect(
-              authorizer.can(Actions.READ, permissionedOnId, [matrix], undefined, Resource.Division)
-            ).toBe(false);
-          });
-        });
-      });
-    });
-  });
-  describe(`Feature: authorization defaults to using the PermissionGroup that corresponds to to constructor of passed 'AuthorizableResource'`, () => {
-    describe(`Given: a named class 'User' and an anoymous object populated with same identifier: 'u_12345'`, () => {
-      const hashid = 'u_12345';
+  describe(`Feature: authorization defaults to using the Group that corresponds to to constructor of passed 'Authorizable'`, () => {
+    describe(`Given: an Authorizable, 'User' class 
+              And: an anoymous object 
+              Both: populated with same id: 'u_12345' 
+                And: reference to an AssociatedResource:Division, via division_id: 'b_abcde'`, () => {
+      const id = 'u_12345';
       const division_id = 'b_abcde';
       class User {
         // tslint:disable-next-line: no-shadowed-variable
-        constructor(private hashid: string, private division_id: string) {}
+        constructor(private id: string, private division_id: string) {}
         toString() {
-          return [this.hashid, this.division_id];
+          return [this.id, this.division_id];
         }
       }
-      const classResource = new User(hashid, division_id);
-      const objectResource = { hashid };
-      describe('And: an Authorizer that wraps an AccessToken ADMIN role on the resource', () => {
+      const classResource = new User(id, division_id);
+      // const objectResource = { id, division_id };
+      describe('And: an Authorizer that wraps an AccessToken with ADMIN role for both the AuthorizableResource and the AssociatedResource', () => {
         const authHeader = createAuthHeader(
           {
             roles: {
-              [Roles.ADMIN]: [hashid, division_id],
+              [Roles.ADMIN]: [id, division_id],
               [Roles.USER]: [],
               [Roles.PENDING]: []
             },
@@ -248,55 +201,67 @@ describe(`Given: a permission matrix that gives:
         );
         const authorizer = new Authorizer(authHeader, SECRET);
         authorizer.authenticate();
-        describe(`When: referencing the classResource`, () => {
-          describe('And: not overriding default PermissionGroup', () => {
-            test('Then: authorization via `can()` is granted', () => {
-              expect(authorizer.can(Actions.DELETE, classResource, [matrix])).toBe(true);
+        describe(`When: asking for permissions to execute an Action included in the Roles for Group identified by the name of the ClassResource:User`, () => {
+          describe('And: not overriding default attribute', () => {
+            describe('And: not specifying a resource', () => {
+              test('Then: authorization via `can()` is granted', () => {
+                // Delete the User implicitly identified by User.id.
+                // Allowed because a this accessToken has Admin Rights on the u_hashid,
+                // and per Matrix, Admin rights on a u_hashid allow deletion.
+                expect(authorizer.can(Actions.DELETE, classResource, [matrix])).toBe(true);
+              });
+            });
+            describe('And: specifying the associated Resource:Division', () => {
+              // Delete the User implicitly identified by User.division_id
+              // Denied because this accessToken has Admin rights on the user.division_id
+              // And per Matrix, Admin rights on a user.division_id rejects deletion.
+              test('Then: authorization is denied', () => {
+                expect(
+                  authorizer.can(
+                    Actions.DELETE,
+                    classResource,
+                    [matrix],
+                    undefined,
+                    Resource.Division
+                  )
+                ).toBe(false);
+              });
             });
           });
-          describe(`And: overriding the PermissionGroup default`, () => {
-            test('Then: authorization requested via `can()` should be granted', () => {
-              expect(
-                authorizer.can(Actions.READ, classResource, [matrix], undefined, Resource.Division)
-              ).toBe(true);
+          describe('And: overriding default attribute', () => {
+            describe('And: not specifying a resource', () => {
+              // Delete the User explicitly identified by User.id
+              // Allowed beacuse this accessToken has Admin rights on the user.id
+              // And per matrix, Admin rights on a User allows deletion
+              test('Then: authorization via `can()` is allowed', () => {
+                expect(authorizer.can(Actions.DELETE, classResource, [matrix], 'id')).toBe(true);
+              });
+            });
+            describe('And: specifying the associated Resource:Division', () => {
+              // Delete the User explicitly identified by User.id, explicitly checked against Division rules.
+              // Denied because this accessToken has Admin rights on the User.division_id
+              // And per matrix, Admin rights on Division denies deletion
+              test('Then: authorization is denied', () => {
+                expect(
+                  authorizer.can(Actions.DELETE, classResource, [matrix], 'id', Resource.Division)
+                ).toBe(false);
+              });
             });
           });
         });
-        describe('When: referencing the objectResource', () => {
-          describe('And: not overriding the default PermissionGroup', () => {
-            test('Then: authorization via `can()` throws', () => {
-              expect(() => authorizer.can(Actions.DELETE, objectResource, [matrix])).toThrow(
-                'Cannot permission on generic `Object`'
-              );
-            });
-          });
-          describe(`And: overriding the PermissionGroup default`, () => {
-            test('Then: authorization requested via `can()` should be granted', () => {
-              expect(
-                authorizer.can(Actions.READ, objectResource, [matrix], undefined, Resource.Division)
-              ).toBe(true);
-            });
-          });
-        });
-        describe('And: when overriding matrix at invocation', () => {
-          describe('When: requesting permissions on default attribute, default group', () => {
-            test('Then: authorization for an allowed permission via `can()` is granted', () => {
-              expect(
-                authorizer.can(Actions.READ, classResource, [matrix], undefined, undefined)
-              ).toBe(true);
-            });
-          });
-          describe('When: requesting permissions on default attribute, default group', () => {
-            test('Then: authorization for an unallowed permission via `can()` is denied', () => {
-              expect(
-                authorizer.can(Actions.REQUEST, classResource, [matrix], undefined, undefined)
-              ).toBe(false);
-            });
-          });
-        });
+        // describe.only('When: referencing the objectResource', () => {
+        //   describe(`And: overriding the PermissionGroup default`, () => {
+        //     test('Then: authorization requested via `can()` should be granted', () => {
+        //       expect(
+        //         authorizer.can(Actions.READ, objectResource, [matrix], undefined, Resource.Division)
+        //       ).toBe(true);
+        //     });
+        //   });
+        // });
       });
     });
   });
+
   describe('Feature: `authenticate()` throws IFF jwt is expired', () => {
     describe('Given: time is frozen at X', () => {
       const now = new Date();
