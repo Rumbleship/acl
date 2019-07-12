@@ -10,7 +10,8 @@ export enum Actions {
   DELETE = 'delete',
   REQUEST = 'request',
   APPROVE = 'approve',
-  QUERY = 'query'
+  QUERY = 'query',
+  MUTATION = 'mutation'
 }
 export enum Resource {
   Division = 'Division',
