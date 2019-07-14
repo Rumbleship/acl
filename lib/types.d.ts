@@ -3,13 +3,21 @@ export declare enum Roles {
     USER = "user",
     PENDING = "pending"
 }
+export declare enum GQLOperation {
+    CREATE = "create",
+    DELETE = "delete",
+    EXECUTE = "execute",
+    QUERY = "query",
+    UPDATE = "update"
+}
 export declare enum Actions {
     CREATE = "create",
-    READ = "read",
-    UPDATE = "update",
+    EXECUTE = "execute",
     DELETE = "delete",
-    REQUEST = "request",
+    UPDATE = "update",
     APPROVE = "approve",
+    VERIFY = "verify",
+    REQUEST = "request",
     QUERY = "query",
     MUTATION = "mutation"
 }

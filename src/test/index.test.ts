@@ -12,11 +12,11 @@ describe(`Given: a permission matrix that gives:
       pending: 'REQUEST' on a 'Division'`, () => {
   const matrix = {
     [Roles.ADMIN]: {
-      [Resource.Division]: [Actions.UPDATE, Actions.READ, Actions.APPROVE],
+      [Resource.Division]: [Actions.UPDATE, Actions.QUERY, Actions.APPROVE],
       [Resource.User]: [Actions.DELETE]
     },
     [Roles.USER]: {
-      [Resource.Division]: [Actions.READ, Actions.APPROVE]
+      [Resource.Division]: [Actions.QUERY, Actions.APPROVE]
     },
     [Roles.PENDING]: {
       [Resource.Division]: [Actions.REQUEST]
@@ -45,7 +45,7 @@ describe(`Given: a permission matrix that gives:
           authorizer.authenticate();
         });
         describe('When: asking for an authorized action against an owned resource with a non-intersecting set of Actions allowed', () => {
-          describe.each([Actions.UPDATE, Actions.READ, Actions.APPROVE])('%s:u_123ce', action => {
+          describe.each([Actions.UPDATE, Actions.QUERY, Actions.APPROVE])('%s:u_123ce', action => {
             test('Then: authorization via `can()  `is denied', () => {
               expect(authorizer.can(action, resource, [matrix], 'hashid', Resource.User)).toBe(
                 false
@@ -83,7 +83,7 @@ describe(`Given: a permission matrix that gives:
           authorizer.authenticate();
         });
         describe('When: asking for an allowed Action against an owned Resource', () => {
-          describe.each([Actions.READ, Actions.APPROVE])('%s:b_abcde', action => {
+          describe.each([Actions.QUERY, Actions.APPROVE])('%s:b_abcde', action => {
             test('Then: authorization via `can()` is granted', () => {
               expect(authorizer.can(action, resource, [matrix], 'hashid', Resource.Division)).toBe(
                 true
@@ -92,7 +92,7 @@ describe(`Given: a permission matrix that gives:
           });
         });
         describe('When: asking for an allowed Action against an unowned Resource', () => {
-          describe.each([Actions.READ, Actions.APPROVE])('%s:u_123ce', action => {
+          describe.each([Actions.QUERY, Actions.APPROVE])('%s:u_123ce', action => {
             test('Then: authorization via `can` is denied', () => {
               expect(
                 authorizer.can(action, anotherResource, [matrix], 'hashid', Resource.Division)
@@ -140,7 +140,7 @@ describe(`Given: a permission matrix that gives:
           expect(authorizer.inScope(Scopes.SYSADMIN)).toBe(true);
         });
         describe('When: asking for any action against a resource', () => {
-          describe.each([Actions.UPDATE, Actions.READ, Actions.APPROVE, Actions.REQUEST])(
+          describe.each([Actions.UPDATE, Actions.QUERY, Actions.APPROVE, Actions.REQUEST])(
             '%s:s_anything',
             action => {
               test('Then: authorization via `can()` is granted', () => {
@@ -253,7 +253,7 @@ describe(`Given: a permission matrix that gives:
         //   describe(`And: overriding the PermissionGroup default`, () => {
         //     test('Then: authorization requested via `can()` should be granted', () => {
         //       expect(
-        //         authorizer.can(Actions.READ, objectResource, [matrix], undefined, Resource.Division)
+        //         authorizer.can(Actions.QUERY, objectResource, [matrix], undefined, Resource.Division)
         //       ).toBe(true);
         //     });
         //   });

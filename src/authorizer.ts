@@ -138,3 +138,9 @@ export class Authorizer {
     return this.scopes.includes(Scopes.SYSADMIN);
   }
 }
+
+export function ActionType(action: Actions): MethodDecorator {
+  return (target: any, propertyName: string | symbol) => {
+    Reflect.set(target, propertyName, action);
+  };
+}

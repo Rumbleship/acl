@@ -23,3 +23,4 @@ export declare class Authorizer {
     can(action: Actions, authorizable: object, matrix: PermissionsMatrix[], attribute?: string, resource?: Resource): boolean;
     inScope(...scopeOrScopeArray: Array<Scopes | Scopes[]>): boolean;
 }
+export declare function ActionType(action: Actions): MethodDecorator;
