@@ -3,10 +3,12 @@ export declare class Authorizer {
     private authorizationHeader;
     private secret;
     private accessToken;
+    private user?;
     private roles?;
-    private scopes;
+    private scopes?;
     constructor(authorizationHeader: string, secret: string);
     authenticate(): boolean;
+    getUser(): string;
     getRoles(): RolesAt;
     getClaims(): Claims;
     /**

@@ -2,7 +2,6 @@ import * as jwt from 'jsonwebtoken';
 import {
   PermissionsMatrix,
   Claims,
-  // Roles,
   Scopes,
   Actions,
   Resource,
@@ -13,8 +12,11 @@ import { baseRoles, getArrayFromOverloadedRest } from './helpers';
 const BEARER_TOKEN_REGEX = /^Bearer [A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/;
 export class Authorizer {
   private accessToken: string;
+  private user?: string; // oid.
   private roles?: RolesAt;
-  private scopes: Scopes[] = [];
+  private scopes?: Scopes[];
+
+  // Can't figure out why Hapi needs this passed through its auth layer right now -- oh well.
   constructor(private authorizationHeader: string, private secret: string) {
     if (!this.authorizationHeader) {
       throw new Error('`authorizationHeader` is required by Authorizer');
@@ -31,17 +33,23 @@ export class Authorizer {
   }
 
   authenticate(): boolean {
-    const { roles, scopes } = jwt.verify(this.accessToken, this.secret) as Claims;
+    const { roles, scopes, user } = jwt.verify(this.accessToken, this.secret) as Claims;
+    this.user = user;
     this.roles = roles;
     this.scopes = scopes;
     return !!this.roles;
   }
 
+  getUser(): string {
+    if (!this.user) {
+      throw new Error('Cannot query an unauthenticated Authorizer. Invoke `authenticate()` first.');
+    }
+    return this.user;
+  }
+
   getRoles(): RolesAt {
     return this.roles || baseRoles();
   }
-
-  // Can't figure out why Hapi needs this passed through its auth layer right now -- oh well.
   getClaims(): Claims {
     return jwt.verify(this.accessToken, this.secret) as Claims;
   }
@@ -130,6 +138,9 @@ export class Authorizer {
 
   inScope(...scopeOrScopeArray: Array<Scopes | Scopes[]>): boolean;
   inScope(...scopeOrScopeArray: Scopes[]): boolean {
+    if (!this.scopes) {
+      throw new Error('Cannot query an unauthenticated Authorizer. Invoke `authenticate()` first.');
+    }
     for (const scope of this.scopes) {
       if (getArrayFromOverloadedRest(scopeOrScopeArray).includes(scope)) {
         return true;
