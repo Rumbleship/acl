@@ -104,7 +104,9 @@ export class Authorizer {
 
         if (resource) {
           const authorizableAttribute =
-            resource === authorizable.constructor.name ? 'id' : `${resource.toLowerCase()}_id`;
+            resource === (authorizable.constructor && authorizable.constructor.name)
+              ? 'id'
+              : `${resource.toLowerCase()}_id`;
           const identifier = (authorizable as any)[authorizableAttribute];
           const actions = (group as any)[resource] || [];
           if (permissionedIdentifiers.includes(identifier) && actions.includes(action)) {
