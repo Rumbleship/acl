@@ -1,3 +1,2 @@
-import { RFIError } from 'spyglass';
-export declare class RFIAuthError extends RFIError {
+export declare class RFIAuthError {
 }
