@@ -3,24 +3,17 @@ export enum Roles {
   USER = 'user',
   PENDING = 'pending'
 }
-export enum GQLOperation {
-  CREATE = 'create',
-  DELETE = 'delete',
-  EXECUTE = 'execute',
-  QUERY = 'query',
-  UPDATE = 'update'
-}
+
 export enum Actions {
   CREATE = 'create',
-  EXECUTE = 'execute',
-  DELETE = 'delete',
+  READ = 'read',
   UPDATE = 'update',
+  DELETE = 'delete',
+  QUERY = 'query',
   // are Approve and Verify the same action, e.g. a limited update?
   APPROVE = 'approve',
   VERIFY = 'verify',
-  REQUEST = 'request',
-  QUERY = 'query',
-  MUTATION = 'mutation'
+  REQUEST = 'request'
 }
 export enum Resource {
   Division = 'Division',
