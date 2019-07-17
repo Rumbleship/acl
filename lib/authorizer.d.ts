@@ -4,12 +4,14 @@ export declare class Authorizer {
     private secret;
     private accessToken;
     private user?;
+    private client?;
     private roles?;
     private scopes?;
     constructor(authorizationHeader: string, secret: string);
     authenticate(): boolean;
     getUser(): string;
     getRoles(): RolesAt;
+    getClient(): string | undefined;
     getClaims(): Claims;
     /**
      * Type-GraphQL compatible method that singularly answers the question:
@@ -25,4 +27,3 @@ export declare class Authorizer {
     can(action: Actions, authorizable: object, matrix: PermissionsMatrix[], attribute?: string, resource?: Resource): boolean;
     inScope(...scopeOrScopeArray: Array<Scopes | Scopes[]>): boolean;
 }
-export declare function ActionType(action: Actions): MethodDecorator;

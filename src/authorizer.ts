@@ -8,15 +8,17 @@ import {
   RolesAt,
   PermissionsGroup
 } from './types';
-import { baseRoles, getArrayFromOverloadedRest } from './helpers';
+import { getArrayFromOverloadedRest } from './helpers';
+import { Requires, Required } from './decorators';
 const BEARER_TOKEN_REGEX = /^Bearer [A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/;
+
 export class Authorizer {
   private accessToken: string;
   private user?: string; // oid.
+  private client?: string;
   private roles?: RolesAt;
-  private scopes?: Scopes[];
+  private scopes?: Scopes[] = [];
 
-  // Can't figure out why Hapi needs this passed through its auth layer right now -- oh well.
   constructor(private authorizationHeader: string, private secret: string) {
     if (!this.authorizationHeader) {
       throw new Error('`authorizationHeader` is required by Authorizer');
@@ -32,23 +34,29 @@ export class Authorizer {
     }
   }
 
+  @Required()
   authenticate(): boolean {
-    const { roles, scopes, user } = jwt.verify(this.accessToken, this.secret) as Claims;
+    const { roles, scopes, user, client } = jwt.verify(this.accessToken, this.secret) as Claims;
     this.user = user;
     this.roles = roles;
     this.scopes = scopes;
+    this.client = client;
     return !!this.roles;
   }
 
+  @Requires('authenticate')
   getUser(): string {
-    if (!this.user) {
-      throw new Error('Cannot query an unauthenticated Authorizer. Invoke `authenticate()` first.');
-    }
-    return this.user;
+    return this.user as string;
   }
 
+  @Requires('authenticate')
   getRoles(): RolesAt {
-    return this.roles || baseRoles();
+    return this.roles as RolesAt;
+  }
+
+  @Requires('authenticate')
+  getClient(): string | undefined {
+    return this.client;
   }
   getClaims(): Claims {
     return jwt.verify(this.accessToken, this.secret) as Claims;
@@ -65,6 +73,7 @@ export class Authorizer {
    * @param resource? Explicitly indicate which group in the matrix should be permissioned
    *                  against.
    */
+  @Requires('authenticate')
   public can(
     action: Actions,
     authorizable: object,
@@ -72,10 +81,6 @@ export class Authorizer {
     attribute?: string,
     resource?: Resource
   ) {
-    if (!this.roles) {
-      throw new Error('Cannot query an unauthenticated Authorizer. Invoke `authenticate()` first.');
-    }
-
     let access = false;
 
     if (this.inScope(Scopes.SYSADMIN)) {
@@ -139,21 +144,13 @@ export class Authorizer {
   }
 
   inScope(...scopeOrScopeArray: Array<Scopes | Scopes[]>): boolean;
+  @Requires('authenticate')
   inScope(...scopeOrScopeArray: Scopes[]): boolean {
-    if (!this.scopes) {
-      throw new Error('Cannot query an unauthenticated Authorizer. Invoke `authenticate()` first.');
-    }
-    for (const scope of this.scopes) {
+    for (const scope of this.scopes as Scopes[]) {
       if (getArrayFromOverloadedRest(scopeOrScopeArray).includes(scope)) {
         return true;
       }
     }
-    return this.scopes.includes(Scopes.SYSADMIN);
+    return (this.scopes as Scopes[]).includes(Scopes.SYSADMIN);
   }
-}
-
-export function ActionType(action: Actions): MethodDecorator {
-  return (target: any, propertyName: string | symbol) => {
-    Reflect.set(target, propertyName, action);
-  };
 }

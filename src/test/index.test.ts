@@ -160,7 +160,8 @@ describe(`Given: a permission matrix that gives:
       'Bearer nosubsections',
       'Bearer',
       'hdaoe',
-      'jwt.claims.here'
+      'jwt.claims.here',
+      ''
     ])(
       'Constructing an Authorizer with an invalid auth header: %s throws',
       (badAuthHeader: string) => {
@@ -170,11 +171,14 @@ describe(`Given: a permission matrix that gives:
     test('Constructing an authorizer with a valid header `Bearer jwt.claims.here` succeeds', () => {
       expect(new Authorizer('Bearer jwt.claims.here', SECRET)).toBeTruthy();
     });
+    test('Constructing an Authorizer without a secret throws', () => {
+      expect(() => new Authorizer('Bearer jwt.claims.here', '')).toThrow();
+    });
   });
   describe(`Feature: authorization defaults to using the Group that corresponds to to constructor of passed 'Authorizable'`, () => {
-    describe(`Given: an Authorizable, 'User' class 
-              And: an anoymous object 
-              Both: populated with same id: 'u_12345' 
+    describe(`Given: an Authorizable, 'User' class
+              And: an anoymous object
+              Both: populated with same id: 'u_12345'
                 And: reference to an AssociatedResource:Division, via division_id: 'b_abcde'`, () => {
       const id = 'u_12345';
       const division_id = 'b_abcde';
@@ -249,15 +253,6 @@ describe(`Given: a permission matrix that gives:
             });
           });
         });
-        // describe.only('When: referencing the objectResource', () => {
-        //   describe(`And: overriding the PermissionGroup default`, () => {
-        //     test('Then: authorization requested via `can()` should be granted', () => {
-        //       expect(
-        //         authorizer.can(Actions.QUERY, objectResource, [matrix], undefined, Resource.Division)
-        //       ).toBe(true);
-        //     });
-        //   });
-        // });
       });
     });
   });
@@ -358,6 +353,49 @@ describe(`Given: a permission matrix that gives:
       });
       test('Then: a present scope passes', () => {
         expect(authorizer.inScope([Scopes.BANKINGADMIN])).toBe(true);
+      });
+    });
+  });
+  describe('Feature: methods throw if the authorizer has not yet been authenticated', () => {
+    describe('Given: two authorizers, one authenticated, one not, exist', () => {
+      const id = 'b_abcde';
+      const authHeader = createAuthHeader(
+        {
+          roles: {
+            [Roles.ADMIN]: [id],
+            [Roles.USER]: [],
+            [Roles.PENDING]: []
+          },
+          user: 'u_abcde',
+          client: 'here for good measure',
+          scopes: [Scopes.BANKINGADMIN]
+        },
+        SECRET
+      );
+      const unauthenticated = new Authorizer(authHeader, SECRET);
+      const authenticated = new Authorizer(authHeader, SECRET);
+      beforeAll(() => {
+        authenticated.authenticate();
+      });
+      describe.each(['getUser', 'getRoles', 'getClient', 'inScope'])(
+        'When: invoking %s on the unauthenticated authorizer',
+        methodName => {
+          test('Then: an error is thrown', () => {
+            expect(() => (unauthenticated as any)[methodName]()).toThrowError();
+          });
+        }
+      );
+      describe.each(['getUser', 'getRoles', 'getClient', 'inScope'])(
+        'When: invoking %s on the authenticated authorizer',
+        methodName => {
+          test('Then: no error is thrown', () => {
+            expect(() => (authenticated as any)[methodName]()).not.toThrowError();
+          });
+        }
+      );
+      test('Then: inScope passes args through decorator', () => {
+        expect(authenticated.inScope(Scopes.BANKINGADMIN)).toBe(true);
+        expect(authenticated.inScope([Scopes.BANKINGADMIN])).toBe(true);
       });
     });
   });
