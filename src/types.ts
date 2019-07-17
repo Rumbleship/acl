@@ -24,7 +24,8 @@ export enum Resource {
 export enum Scopes {
   SYSADMIN = 'system:*',
   BANKINGADMIN = 'banking:*',
-  ORDERADMIN = 'orders:*'
+  ORDERADMIN = 'orders:*',
+  DIVISIONADMIN = 'divisions:*'
 }
 
 export type PermissionsGroup = {
