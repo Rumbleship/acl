@@ -37,11 +37,15 @@ export class Authorizer {
 
   @Required()
   authenticate(): boolean {
-    const { roles, scopes, user, client } = jwt.verify(this.accessToken, this.secret) as Claims;
+    const { roles, scopes, user, client, owner } = jwt.verify(
+      this.accessToken,
+      this.secret
+    ) as Claims;
     this.user = user;
     this.roles = roles;
     this.scopes = scopes;
     this.client = client;
+    this.owner = owner;
     return !!this.roles;
   }
 
