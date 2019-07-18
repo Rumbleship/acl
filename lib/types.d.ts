@@ -25,6 +25,10 @@ export declare enum Scopes {
     ORDERADMIN = "orders:*",
     DIVISIONADMIN = "divisions:*"
 }
+export declare enum GrantTypes {
+    REFRESH = "refresh",
+    ACCESS = "access"
+}
 export declare type PermissionsGroup = {
     [key in Resource]?: Actions[];
 };
@@ -43,7 +47,8 @@ export interface AccessClaims {
 }
 export interface RefreshClaims {
     owner: string;
-    type: Resource.User | Resource.Division;
+    target: Resource.User | Resource.Division;
+    grant_type: GrantTypes;
 }
 export interface Claims extends AccessClaims, RefreshClaims {
     exp: Date;

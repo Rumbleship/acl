@@ -29,6 +29,11 @@ export enum Scopes {
   DIVISIONADMIN = 'divisions:*'
 }
 
+export enum GrantTypes {
+  REFRESH = 'refresh',
+  ACCESS = 'access'
+}
+
 export type PermissionsGroup = {
   // Only Resources defined are valid to permission on,
   // but all are not required to be permissioned on.
@@ -53,7 +58,8 @@ export interface AccessClaims {
 }
 export interface RefreshClaims {
   owner: string;
-  type: Resource.User | Resource.Division;
+  target: Resource.User | Resource.Division;
+  grant_type: GrantTypes;
 }
 export interface Claims extends AccessClaims, RefreshClaims {
   exp: Date;
