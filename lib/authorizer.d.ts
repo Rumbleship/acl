@@ -13,9 +13,8 @@ export declare class Authorizer {
     getUser(): string;
     getRoles(): RolesAt;
     getClient(): string | undefined;
-    getClaims(): Claims;
     getOwner(): string | undefined;
-    canRefresh(): boolean;
+    getClaims(): Claims;
     /**
      * Type-GraphQL compatible method that singularly answers the question:
      * "Given the accessToken that this Authorizer represents:
