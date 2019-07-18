@@ -1,4 +1,4 @@
-import { PermissionsMatrix, Claims, Scopes, Actions, Resource, RolesAt } from './types';
+import { PermissionsMatrix, Claims, Scopes, Actions, Resource, RolesAt, RefreshClaims } from './types';
 export declare class Authorizer {
     private authorizationHeader;
     private secret;
@@ -13,6 +13,7 @@ export declare class Authorizer {
     getRoles(): RolesAt;
     getClient(): string | undefined;
     getClaims(): Claims;
+    canRefresh(): RefreshClaims;
     /**
      * Type-GraphQL compatible method that singularly answers the question:
      * "Given the accessToken that this Authorizer represents:

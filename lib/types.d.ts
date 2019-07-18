@@ -1,3 +1,4 @@
+import { RefreshClaims } from './types';
 export declare enum Roles {
     ADMIN = "admin",
     USER = "user",
@@ -33,14 +34,18 @@ export declare type PermissionsMatrix = {
 export declare type RolesAt = {
     [key in Roles]?: string[];
 };
-export interface ClaimsInput {
+export interface AccessClaims {
     name?: string;
     user?: string;
     client?: string;
     roles: RolesAt;
     scopes: Scopes[];
 }
-export interface Claims extends ClaimsInput {
+export interface RefreshClaims {
+    owner: string;
+    type: Resource.User | Resource.Division;
+}
+export interface Claims extends AccessClaims, RefreshClaims {
     exp: Date;
     iat: Date;
 }

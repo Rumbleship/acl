@@ -6,7 +6,8 @@ import {
   Actions,
   Resource,
   RolesAt,
-  PermissionsGroup
+  PermissionsGroup,
+  RefreshClaims
 } from './types';
 import { getArrayFromOverloadedRest } from './helpers';
 import { Requires, Required } from './decorators';
@@ -60,6 +61,11 @@ export class Authorizer {
   }
   getClaims(): Claims {
     return jwt.verify(this.accessToken, this.secret) as Claims;
+  }
+
+  @Requires('authenticate')
+  canRefresh(): RefreshClaims {
+    return jwt.verify(this.accessToken, this.secret) as RefreshClaims;
   }
 
   /**
