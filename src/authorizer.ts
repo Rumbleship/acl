@@ -6,8 +6,7 @@ import {
   Actions,
   Resource,
   RolesAt,
-  PermissionsGroup,
-  RefreshClaims
+  PermissionsGroup
 } from './types';
 import { getArrayFromOverloadedRest } from './helpers';
 import { Requires, Required } from './decorators';
@@ -19,6 +18,7 @@ export class Authorizer {
   private client?: string;
   private roles?: RolesAt;
   private scopes?: Scopes[] = [];
+  private owner?: string;
 
   constructor(private authorizationHeader: string, private secret: string) {
     if (!this.authorizationHeader) {
@@ -59,13 +59,17 @@ export class Authorizer {
   getClient(): string | undefined {
     return this.client;
   }
+  @Requires('authenticate')
+  getOwner(): string | undefined {
+    return this.owner;
+  }
+  // I think this is leftover cruft? Would like to remove.
   getClaims(): Claims {
     return jwt.verify(this.accessToken, this.secret) as Claims;
   }
 
-  @Requires('authenticate')
-  canRefresh(): RefreshClaims {
-    return jwt.verify(this.accessToken, this.secret) as RefreshClaims;
+  canRefresh(): boolean {
+    return !!jwt.verify(this.accessToken, this.secret);
   }
 
   /**

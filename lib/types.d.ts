@@ -47,7 +47,6 @@ export interface AccessClaims {
 }
 export interface RefreshClaims {
     owner: string;
-    target: Resource.User | Resource.Division;
     grant_type: GrantTypes;
 }
 export interface Claims extends AccessClaims, RefreshClaims {
