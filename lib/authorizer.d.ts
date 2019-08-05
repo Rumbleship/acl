@@ -7,11 +7,13 @@ export declare class Authorizer {
     private client?;
     private roles?;
     private scopes?;
+    private owner?;
     constructor(authorizationHeader: string, secret: string);
     authenticate(): boolean;
     getUser(): string;
     getRoles(): RolesAt;
     getClient(): string | undefined;
+    getOwner(): string | undefined;
     getClaims(): Claims;
     /**
      * Type-GraphQL compatible method that singularly answers the question:

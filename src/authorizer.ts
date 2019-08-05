@@ -18,6 +18,7 @@ export class Authorizer {
   private client?: string;
   private roles?: RolesAt;
   private scopes?: Scopes[] = [];
+  private owner?: string;
 
   constructor(private authorizationHeader: string, private secret: string) {
     if (!this.authorizationHeader) {
@@ -36,11 +37,15 @@ export class Authorizer {
 
   @Required()
   authenticate(): boolean {
-    const { roles, scopes, user, client } = jwt.verify(this.accessToken, this.secret) as Claims;
+    const { roles, scopes, user, client, owner } = jwt.verify(
+      this.accessToken,
+      this.secret
+    ) as Claims;
     this.user = user;
     this.roles = roles;
     this.scopes = scopes;
     this.client = client;
+    this.owner = owner;
     return !!this.roles;
   }
 
@@ -58,6 +63,12 @@ export class Authorizer {
   getClient(): string | undefined {
     return this.client;
   }
+  @Requires('authenticate')
+  getOwner(): string | undefined {
+    // this really should return an unwrappable Oid...
+    return this.owner;
+  }
+  // I think this is leftover cruft? Would like to remove.
   getClaims(): Claims {
     return jwt.verify(this.accessToken, this.secret) as Claims;
   }

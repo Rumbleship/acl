@@ -52,6 +52,7 @@ jobs:
       - image: circleci/node:10
     working_directory: ~/repos/acl
     steps:
+      - add_ssh_keys: *rumbleship_ops_key
       - restore_cache:
           keys:
             - v2-git-{{ .Branch }}
