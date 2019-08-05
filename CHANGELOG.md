@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   * DivisionAdmin scope
   * `.prettierignore` file
   * Skeleton for generating and consuming `refreshTokens`
+  * Decorators for injecting the `attribute` and `resource` into a subclass's method definition
 ### Removed
   * `moment` is no longer a peer dependency, just a `devDependency`
 ### Changed
