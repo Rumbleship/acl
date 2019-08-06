@@ -14,7 +14,10 @@ export enum Actions {
   // are Approve and Verify the same action, e.g. a limited update?
   APPROVE = 'approve',
   VERIFY = 'verify',
-  REQUEST = 'request'
+  REQUEST = 'request',
+  PURCHASE = 'purchase',
+  SHIP = 'ship',
+  RETURN = 'return'
 }
 export enum Resource {
   Division = 'Division',
