@@ -12,7 +12,10 @@ export declare enum Actions {
     QUERY = "query",
     APPROVE = "approve",
     VERIFY = "verify",
-    REQUEST = "request"
+    REQUEST = "request",
+    PURCHASE = "purchase",
+    SHIP = "ship",
+    RETURN = "return"
 }
 export declare enum Resource {
     Division = "Division",
