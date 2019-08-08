@@ -187,9 +187,13 @@ describe(`Given: a permission matrix that gives:
       class User {
         // tslint:disable-next-line: no-shadowed-variable
         constructor(
+          // tslint:disable-next-line: no-shadowed-variable
           private id: string,
+          // tslint:disable-next-line: no-shadowed-variable
           private division_id: string,
+          // tslint:disable-next-line: no-shadowed-variable
           private owner_id: string,
+          // tslint:disable-next-line: no-shadowed-variable
           private counterparty_id: string
         ) {}
         toString() {
