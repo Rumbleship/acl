@@ -110,11 +110,8 @@ export class Authorizer {
           const actions = resource
             ? (group as any)[resource] || []
             : (group as any)[authorizable.constructor.name] || [];
-          let attrs;
-          if (typeof attribute === 'string') {
-            attrs = [attribute];
-          }
-          for (const attr in attrs) {
+          const attrs = !Array.isArray(attribute) ? [attribute] : attribute;
+          for (const attr of attrs) {
             if (
               permissionedIdentifiers.includes((authorizable as any)[attr]) &&
               (actions as any).includes(action)
