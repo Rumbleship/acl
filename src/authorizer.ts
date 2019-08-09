@@ -68,6 +68,11 @@ export class Authorizer {
     // this really should return an unwrappable Oid...
     return this.owner;
   }
+
+  @Requires('authenticate')
+  getAuthorizationHeader(): string {
+    return this.authorizationHeader;
+  }
   // I think this is leftover cruft? Would like to remove.
   getClaims(): Claims {
     return jwt.verify(this.accessToken, this.secret) as Claims;
