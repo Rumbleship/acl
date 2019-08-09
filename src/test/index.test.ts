@@ -182,14 +182,25 @@ describe(`Given: a permission matrix that gives:
                 And: reference to an AssociatedResource:Division, via division_id: 'b_abcde'`, () => {
       const id = 'u_12345';
       const division_id = 'b_abcde';
+      const owner_id = 'o_abcde';
+      const counterparty_id = 'c_12345';
       class User {
         // tslint:disable-next-line: no-shadowed-variable
-        constructor(private id: string, private division_id: string) {}
+        constructor(
+          // tslint:disable-next-line: no-shadowed-variable
+          private id: string,
+          // tslint:disable-next-line: no-shadowed-variable
+          private division_id: string,
+          // tslint:disable-next-line: no-shadowed-variable
+          private owner_id: string,
+          // tslint:disable-next-line: no-shadowed-variable
+          private counterparty_id: string
+        ) {}
         toString() {
-          return [this.id, this.division_id];
+          return [this.id, this.division_id, this.owner_id, this.counterparty_id];
         }
       }
-      const classResource = new User(id, division_id);
+      const classResource = new User(id, division_id, owner_id, counterparty_id);
       // const objectResource = { id, division_id };
       describe('And: an Authorizer that wraps an AccessToken with ADMIN role for both the AuthorizableResource and the AssociatedResource', () => {
         const authHeader = createAuthHeader(
@@ -248,6 +259,34 @@ describe(`Given: a permission matrix that gives:
               test('Then: authorization is denied', () => {
                 expect(
                   authorizer.can(Actions.DELETE, classResource, [matrix], 'id', Resource.Division)
+                ).toBe(false);
+              });
+            });
+          });
+          describe('And: overriding default attribute with multiple attributes where one is valid', () => {
+            describe('And: not specifying a resource', () => {
+              // Delete the User explicitly identified by User.id or User.division_id
+              // Allowed beacuse this accessToken has Admin rights on the user.id and user.division_id
+              // And per matrix, Admin rights on a User allows deletion
+              test('Then: authorization via `can()` is allowed', () => {
+                expect(
+                  authorizer.can(Actions.DELETE, classResource, [matrix], ['id', 'division_id'])
+                ).toBe(true);
+              });
+            });
+          });
+          describe('And: overriding default attribute with multiple attributes where none are valid', () => {
+            describe('And: not specifying a resource', () => {
+              // Request the User explicitly identified by User.owner_id or User.counterparty_id
+              // Not allowed beacuse this accessToken has does not have Admin rights on the user.owner_id or the user.counterparty_id
+              test('Then: authorization via `can()` is denied', () => {
+                expect(
+                  authorizer.can(
+                    Actions.REQUEST,
+                    classResource,
+                    [matrix],
+                    ['owner_id', 'counterparty_id']
+                  )
                 ).toBe(false);
               });
             });

@@ -29,7 +29,7 @@ export function Requires(methodName: string | symbol): MethodDecorator {
   };
 }
 
-export function AuthorizedAttribute(attribute: string): MethodDecorator {
+export function AuthorizedAttribute(attribute: string | string[]): MethodDecorator {
   return (target: any, propertyName: string | symbol, descriptor: any) => {
     const originalMethod = descriptor.value;
     Reflect.set(target, Symbol.for(`${propertyName.toString()}AuthorizedAttribute`), attribute);
