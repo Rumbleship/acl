@@ -26,6 +26,6 @@ export declare class Authorizer {
      * @param resource? Explicitly indicate which group in the matrix should be permissioned
      *                  against.
      */
-    can(action: Actions, authorizable: object, matrix: PermissionsMatrix[], attribute?: string, resource?: Resource): boolean;
+    can(action: Actions, authorizable: object, matrix: PermissionsMatrix[], attribute?: string | string[], resource?: Resource): boolean;
     inScope(...scopeOrScopeArray: Array<Scopes | Scopes[]>): boolean;
 }

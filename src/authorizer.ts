@@ -89,7 +89,7 @@ export class Authorizer {
     action: Actions,
     authorizable: object,
     matrix: PermissionsMatrix[],
-    attribute?: string,
+    attribute?: string | string[],
     resource?: Resource
   ) {
     let access = false;
@@ -110,11 +110,14 @@ export class Authorizer {
           const actions = resource
             ? (group as any)[resource] || []
             : (group as any)[authorizable.constructor.name] || [];
-          if (
-            permissionedIdentifiers.includes((authorizable as any)[attribute]) &&
-            (actions as any).includes(action)
-          ) {
-            access = true;
+          const attrs = !Array.isArray(attribute) ? [attribute] : attribute;
+          for (const attr of attrs) {
+            if (
+              permissionedIdentifiers.includes((authorizable as any)[attr]) &&
+              (actions as any).includes(action)
+            ) {
+              access = true;
+            }
           }
         }
 
