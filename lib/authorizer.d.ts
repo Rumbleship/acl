@@ -7,11 +7,14 @@ export declare class Authorizer {
     private client?;
     private roles?;
     private scopes?;
+    private owner?;
     constructor(authorizationHeader: string, secret: string);
     authenticate(): boolean;
     getUser(): string;
     getRoles(): RolesAt;
     getClient(): string | undefined;
+    getOwner(): string | undefined;
+    getAuthorizationHeader(): string;
     getClaims(): Claims;
     /**
      * Type-GraphQL compatible method that singularly answers the question:
@@ -24,6 +27,6 @@ export declare class Authorizer {
      * @param resource? Explicitly indicate which group in the matrix should be permissioned
      *                  against.
      */
-    can(action: Actions, authorizable: object, matrix: PermissionsMatrix[], attribute?: string, resource?: Resource): boolean;
+    can(action: Actions, authorizable: object, matrix: PermissionsMatrix[], attribute?: string | string[], resource?: Resource): boolean;
     inScope(...scopeOrScopeArray: Array<Scopes | Scopes[]>): boolean;
 }
