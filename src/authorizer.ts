@@ -163,12 +163,6 @@ export class Authorizer {
     return access;
   }
 
-  // @Requires('authenticate')
-  public removeSecret(authorizer: this) {
-    delete authorizer['secret'];
-    return authorizer;
-  }
-
   inScope(...scopeOrScopeArray: Array<Scopes | Scopes[]>): boolean;
   @Requires('authenticate')
   inScope(...scopeOrScopeArray: Scopes[]): boolean {
@@ -178,5 +172,10 @@ export class Authorizer {
       }
     }
     return (this.scopes as Scopes[]).includes(Scopes.SYSADMIN);
+  }
+
+  public removeSecret(thisAuthorizer: this) {
+    delete thisAuthorizer['secret'];
+    return thisAuthorizer;
   }
 }
