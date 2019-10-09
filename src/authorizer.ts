@@ -21,6 +21,7 @@ export class Authorizer {
   private owner?: string;
 
   constructor(private authorizationHeader: string, private secret: string) {
+    this.secret = secret;
     if (!this.authorizationHeader) {
       throw new Error('`authorizationHeader` is required by Authorizer');
     }
@@ -89,6 +90,7 @@ export class Authorizer {
    * @param resource? Explicitly indicate which group in the matrix should be permissioned
    *                  against.
    */
+
   @Requires('authenticate')
   public can(
     action: Actions,
@@ -160,6 +162,12 @@ export class Authorizer {
       return access;
     }
     return access;
+  }
+
+  // @Requires('authenticate')
+  public removeSecret(authorizer: this) {
+    delete authorizer['secret'];
+    return authorizer;
   }
 
   inScope(...scopeOrScopeArray: Array<Scopes | Scopes[]>): boolean;

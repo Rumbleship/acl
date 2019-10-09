@@ -92,3 +92,10 @@ describe('Scenario: A Subclass can decorate a method that invokes the authorizer
     expect(mySub.superCallCount).toBe(3);
   });
 });
+describe('Scenario: An instance of Authorizer is instantiated and is attached to the metadata, which is logged', () => {
+  test('The Authorizer class is instantiated and logged', () => {
+    const authorizer = new Authorizer(userOfOwnerRelatedToAuthorizable, SECRET);
+    expect(authorizer['secret']).toBe('signingsecret');
+    expect(authorizer.removeSecret(authorizer)['secret']).toBeFalsy();
+  });
+});
