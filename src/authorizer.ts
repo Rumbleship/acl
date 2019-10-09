@@ -21,7 +21,6 @@ export class Authorizer {
   private owner?: string;
 
   constructor(private authorizationHeader: string, private secret: string) {
-    this.secret = secret;
     if (!this.authorizationHeader) {
       throw new Error('`authorizationHeader` is required by Authorizer');
     }
