@@ -95,6 +95,6 @@ describe('Scenario: A Subclass can decorate a method that invokes the authorizer
 describe('Scenario: An instance of Authorizer is instantiated and is attached to the metadata, which is logged', () => {
   test('The Authorizer class is instantiated and the secret property is removed', () => {
     const authorizer = new Authorizer(userOfOwnerRelatedToAuthorizable, SECRET);
-    expect(authorizer.toJson()).not.toContain(authorizer['secret']);
+    expect(authorizer.toJson()).not.toContain(Reflect.get(authorizer, 'secret'));
   });
 });
