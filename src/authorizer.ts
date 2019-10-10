@@ -174,8 +174,9 @@ export class Authorizer {
     return (this.scopes as Scopes[]).includes(Scopes.SYSADMIN);
   }
 
-  public removeSecret(thisAuthorizer: this) {
-    delete thisAuthorizer['secret'];
-    return thisAuthorizer;
+  public toJson() {
+    const output = { ...this };
+    delete output.secret;
+    return output;
   }
 }
