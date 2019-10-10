@@ -78,6 +78,11 @@ export class Authorizer {
     return jwt.verify(this.accessToken, this.secret) as Claims;
   }
 
+  set toJson(output: this) {
+    output = { ...this };
+    delete output.secret;
+  }
+
   /**
    * Type-GraphQL compatible method that singularly answers the question:
    * "Given the accessToken that this Authorizer represents:
@@ -86,7 +91,7 @@ export class Authorizer {
    * @param authorizable The record being authorized before being returned to the requesting User
    * @param matrix The permission matrix defined in the GQL model via Authorized decorator
    * @param attribute? Explicitly indicate how to index into the `authorizable`
-   * @param resource? Explicitly indicate which group in the matrix should be permissioned
+   * @param resource? Explicitly indicate which group in the matrix should be permissionedq
    *                  against.
    */
 
@@ -172,11 +177,5 @@ export class Authorizer {
       }
     }
     return (this.scopes as Scopes[]).includes(Scopes.SYSADMIN);
-  }
-
-  toJson() {
-    const output = { ...this };
-    delete output.secret;
-    return output;
   }
 }
