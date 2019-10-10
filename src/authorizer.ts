@@ -91,7 +91,7 @@ export class Authorizer {
    * @param authorizable The record being authorized before being returned to the requesting User
    * @param matrix The permission matrix defined in the GQL model via Authorized decorator
    * @param attribute? Explicitly indicate how to index into the `authorizable`
-   * @param resource? Explicitly indicate which group in the matrix should be permissionedq
+   * @param resource? Explicitly indicate which group in the matrix should be permissioned
    *                  against.
    */
 
