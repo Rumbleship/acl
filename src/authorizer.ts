@@ -78,9 +78,10 @@ export class Authorizer {
     return jwt.verify(this.accessToken, this.secret) as Claims;
   }
 
-  set toJson(output: this) {
+  toJson(output: this) {
     output = { ...this };
     delete output.secret;
+    return output;
   }
 
   /**

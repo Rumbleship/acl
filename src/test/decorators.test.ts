@@ -96,6 +96,10 @@ describe(`Given: an Authorizer wrapping a known secret
             When: serializing the authorizer
             Then: the output does not include the secret  
   `, () => {
-  const authorizer = new Authorizer(userOfOwnerRelatedToAuthorizable, SECRET);
-  expect(authorizer).not.toContain(Reflect.get(authorizer, 'secret'));
+  test(`The secret property on Authorizer is removed`, () => {
+    const authorizer = new Authorizer(userOfOwnerRelatedToAuthorizable, SECRET);
+    expect(authorizer).not.toHaveProperty(Reflect.get(authorizer, 'secret'));
+    expect(authorizer).toHaveProperty('accessToken');
+    expect(authorizer).toHaveProperty('authorizationHeader');
+  });
 });
