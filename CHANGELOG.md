@@ -18,7 +18,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
   * `Actions.PURCHASE`, `Actions.SHIP` and `Actions.RETURN` values are now uppercase
   * `can` accepts either an attribute or a list of attributes
-  * Passing an empty array of scopes to `inScope` will return true
 ### Fixed
 ### Deprecated
 ### Security

@@ -165,9 +165,6 @@ export class Authorizer {
   inScope(...scopeOrScopeArray: Array<Scopes | Scopes[]>): boolean;
   @Requires('authenticate')
   inScope(...scopeOrScopeArray: Scopes[]): boolean {
-    if ((this.scopes as Scopes[]).length === 0) {
-      return true;
-    }
     for (const scope of this.scopes as Scopes[]) {
       if (getArrayFromOverloadedRest(scopeOrScopeArray).includes(scope)) {
         return true;
