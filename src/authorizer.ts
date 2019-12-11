@@ -95,6 +95,8 @@ export class Authorizer {
     authorizable: object,
     matrix: PermissionsMatrix[],
     attributeResourceMap: AuthorizerTreatAsMap = getAuthorizerTreatAs(authorizable)
+
+    // Group as a class not a type?
   ) {
     let access = false;
 
@@ -125,34 +127,32 @@ export class Authorizer {
             }
           }
         }
-        for (const [attribute, resources] of attributeResourceMap.entries()) {
-          for (const resource of resources.values()) {
-            (function checkKnownAttribute() {
-              const actions = resource
-                ? (group as any)[resource] || []
-                : (group as any)[authorizable.constructor.name] || [];
-              const attrs = !Array.isArray(attribute) ? [attribute] : attribute;
-              for (const attr of attrs) {
-                if (
-                  permissionedIdentifiers.includes((authorizable as any)[attr]) &&
-                  (actions as any).includes(action)
-                ) {
-                  access = true;
-                }
-              }
-            })();
-            (function checkKnownResource() {
-              const authorizableAttribute =
-                resource === (authorizable.constructor && authorizable.constructor.name)
-                  ? 'id'
-                  : `${resource.toLowerCase()}_id`;
-              const identifier = (authorizable as any)[authorizableAttribute];
-              const actions = (group as any)[resource] || [];
-              if (permissionedIdentifiers.includes(identifier) && actions.includes(action)) {
+        for (const [attribute, resource] of attributeResourceMap.entries()) {
+          (function checkKnownAttribute() {
+            const actions = resource
+              ? (group as any)[resource] || []
+              : (group as any)[authorizable.constructor.name] || [];
+            const attrs = !Array.isArray(attribute) ? [attribute] : attribute;
+            for (const attr of attrs) {
+              if (
+                permissionedIdentifiers.includes((authorizable as any)[attr]) &&
+                (actions as any).includes(action)
+              ) {
                 access = true;
               }
-            })();
-          }
+            }
+          })();
+          (function checkKnownResource() {
+            const authorizableAttribute =
+              resource === (authorizable.constructor && authorizable.constructor.name)
+                ? 'id'
+                : `${resource.toLowerCase()}_id`;
+            const identifier = (authorizable as any)[authorizableAttribute];
+            const actions = (group as any)[resource] || [];
+            if (permissionedIdentifiers.includes(identifier) && actions.includes(action)) {
+              access = true;
+            }
+          })();
         }
         if (!access) {
           inflectAndSearchMatrix();

@@ -31,7 +31,7 @@ export function Requires(methodName: string | symbol): MethodDecorator {
   };
 }
 const AuthResourceSymbol = Symbol('AuthResourceSymbol');
-export type AuthorizerTreatAsMap = Map<string, Set<Resource>>;
+export class AuthorizerTreatAsMap<K = string, V = Resource> extends Map<K, V> {}
 /**
  *
  * @param resource: Resource Decorate the target property with metadata stored
@@ -39,16 +39,21 @@ export type AuthorizerTreatAsMap = Map<string, Set<Resource>>;
  */
 export function AuthorizerTreatAs(resource: Resource): PropertyDecorator {
   return (target: object, propertyKey: string | symbol) => {
-    const retrieved = Reflect.getMetadata(AuthResourceSymbol, target);
-    const treatAsMap = retrieved || new Map<string, Set<Resource>>();
-    const entry = treatAsMap.get(propertyKey) || new Set<Resource>();
-    entry.add(resource);
-    treatAsMap.set(propertyKey, entry);
+    const retrieved: AuthorizerTreatAsMap = Reflect.getMetadata(AuthResourceSymbol, target);
+    const treatAsMap: AuthorizerTreatAsMap = retrieved || new Map<string, Resource>();
+    treatAsMap.set(propertyKey.toString(), resource);
     Reflect.defineMetadata(AuthResourceSymbol, treatAsMap, target);
   };
 }
 
-export function getAuthorizerTreatAs(target: any): AuthorizerTreatAsMap {
-  const retrieved = Reflect.getMetadata(AuthResourceSymbol, target);
-  return retrieved || (new Map<string, Set<Resource>>() as AuthorizerTreatAsMap);
+export interface getAuthorizerTreatAsOptions {
+  inflect_against: string;
+}
+
+export function getAuthorizerTreatAs(
+  target: any,
+  options: getAuthorizerTreatAsOptions = { inflect_against: '_id' }
+): AuthorizerTreatAsMap {
+  const retrieved: AuthorizerTreatAsMap = Reflect.getMetadata(AuthResourceSymbol, target);
+  return retrieved || new AuthorizerTreatAsMap();
 }
