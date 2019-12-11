@@ -1,4 +1,5 @@
-import { PermissionsMatrix, Claims, Scopes, Actions, Resource, RolesAt } from './types';
+import { PermissionsMatrix, Claims, Scopes, Actions, RolesAt } from './types';
+import { AuthorizerTreatAsMap } from './decorators';
 export declare class Authorizer {
     private authorizationHeader;
     private secret;
@@ -27,6 +28,6 @@ export declare class Authorizer {
      * @param resource? Explicitly indicate which group in the matrix should be permissioned
      *                  against.
      */
-    can(action: Actions, authorizable: object, matrix: PermissionsMatrix[], attribute?: string | string[], resource?: Resource): boolean;
+    can(action: Actions, authorizable: object, matrix: PermissionsMatrix[], attributeResourceMap?: AuthorizerTreatAsMap): boolean;
     inScope(...scopeOrScopeArray: Array<Scopes | Scopes[]>): boolean;
 }

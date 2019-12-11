@@ -46,6 +46,7 @@ const matrix: PermissionsMatrix = {
 
 class SuperClass {
   superCallCount: number = 0;
+  // tslint:disable-next-line: no-shadowed-variable
   constructor(public user_id: string) {}
   permissionedByExternalAuthorizable(header: string): boolean {
     this.superCallCount++;
@@ -71,6 +72,7 @@ class PropertyDecoratorSubclass extends SuperClass {
   @AuthorizerTreatAs(Resource.User)
   public owner_id: string;
 
+  // tslint:disable-next-line: no-shadowed-variable
   constructor(public user_id: string, owner_id: string) {
     super(user_id);
     this.owner_id = owner_id;

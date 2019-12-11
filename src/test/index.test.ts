@@ -3,6 +3,7 @@ import * as jwt from 'jsonwebtoken';
 import * as moment from 'moment';
 import { Authorizer, createAuthHeader } from './../index';
 import { Roles, Resource, Actions, Scopes } from './../types';
+import { AuthorizerTreatAs } from './../decorators';
 import { baseRoles } from '../helpers';
 const SECRET = 'signingsecret';
 describe(`Given: a permission matrix that gives:
@@ -47,16 +48,15 @@ describe(`Given: a permission matrix that gives:
         describe('When: asking for an authorized action against an owned resource with a non-intersecting set of Actions allowed', () => {
           describe.each([Actions.UPDATE, Actions.QUERY, Actions.APPROVE])('%s:u_123ce', action => {
             test('Then: authorization via `can()  `is denied', () => {
-              expect(authorizer.can(action, resource, [matrix], 'hashid', Resource.User)).toBe(
-                false
-              );
+              expect(authorizer.can(action, resource, [matrix])).toBe(false);
             });
           });
         });
         describe('When: asking for an unauthorized action against an owned resource with a non-intersecting set of Actions defined', () => {
           describe.each([Actions.REQUEST])('%s:u_123ce', action => {
             test('Then: authorization is denied', () => {
-              expect(authorizer.can(action, resource, [matrix], 'hashid')).toBe(false);
+              // expect(authorizer.can(action, resource, [matrix], 'hashid')).toBe(false);
+              expect(authorizer.can(action, resource, [matrix])).toBe(false);
             });
           });
         });
@@ -85,36 +85,30 @@ describe(`Given: a permission matrix that gives:
         describe('When: asking for an allowed Action against an owned Resource', () => {
           describe.each([Actions.QUERY, Actions.APPROVE])('%s:b_abcde', action => {
             test('Then: authorization via `can()` is granted', () => {
-              expect(authorizer.can(action, resource, [matrix], 'hashid', Resource.Division)).toBe(
-                true
-              );
+              const map = new Map<string, Set<Resource>>();
+              map.set('hashid', new Set([Resource.Division]));
+              expect(authorizer.can(action, resource, [matrix], map)).toBe(true);
             });
           });
         });
         describe('When: asking for an allowed Action against an unowned Resource', () => {
           describe.each([Actions.QUERY, Actions.APPROVE])('%s:u_123ce', action => {
             test('Then: authorization via `can` is denied', () => {
-              expect(
-                authorizer.can(action, anotherResource, [matrix], 'hashid', Resource.Division)
-              ).toBe(false);
+              expect(authorizer.can(action, anotherResource, [matrix])).toBe(false);
             });
           });
         });
         describe('When: asking for an unapproved Action against an unowned Resource', () => {
           describe.each([Actions.UPDATE, Actions.REQUEST])('%s:u_123ce', action => {
             test('Then: authorization via `can()` is denied', () => {
-              expect(
-                authorizer.can(action, anotherResource, [matrix], 'hashid', Resource.Division)
-              ).toBe(false);
+              expect(authorizer.can(action, anotherResource, [matrix])).toBe(false);
             });
           });
         });
         describe('When: asking for an unapproved Action against an authorized Resource', () => {
           describe.each([Actions.UPDATE, Actions.REQUEST])('%s:b_abcde', action => {
             test('Then: autherization via `can()` is denied', () => {
-              expect(authorizer.can(action, resource, [matrix], 'hashid', Resource.Division)).toBe(
-                false
-              );
+              expect(authorizer.can(action, resource, [matrix])).toBe(false);
             });
           });
         });
@@ -145,7 +139,8 @@ describe(`Given: a permission matrix that gives:
             action => {
               test('Then: authorization via `can()` is granted', () => {
                 expect(
-                  authorizer.can(action, { hashid: 'foo' }, [matrix], 'hashid', Resource.Division)
+                  // authorizer.can(action, { hashid: 'foo' }, [matrix], 'hashid', Resource.Division)
+                  authorizer.can(action, { hashid: 'foo' }, [matrix])
                 ).toBe(true);
               });
             }
@@ -184,7 +179,11 @@ describe(`Given: a permission matrix that gives:
       const division_id = 'b_abcde';
       const owner_id = 'o_abcde';
       const counterparty_id = 'c_12345';
+      const another_id = 'a_921812';
       class User {
+        @AuthorizerTreatAs(Resource.User)
+        public another_id: string;
+
         // tslint:disable-next-line: no-shadowed-variable
         constructor(
           // tslint:disable-next-line: no-shadowed-variable
@@ -194,14 +193,18 @@ describe(`Given: a permission matrix that gives:
           // tslint:disable-next-line: no-shadowed-variable
           private owner_id: string,
           // tslint:disable-next-line: no-shadowed-variable
-          private counterparty_id: string
-        ) {}
-        toString() {
-          return [this.id, this.division_id, this.owner_id, this.counterparty_id];
+          private counterparty_id: string,
+          // tslint:disable-next-line: no-shadowed-variable
+          another_id: string
+        ) {
+          this.another_id = another_id;
+        }
+
+        compilerDoesntLikeUnusedAttrs() {
+          return [this.id, this.division_id, this.owner_id, this.counterparty_id, this.another_id];
         }
       }
-      const classResource = new User(id, division_id, owner_id, counterparty_id);
-      // const objectResource = { id, division_id };
+      const classResource = new User(id, division_id, owner_id, counterparty_id, another_id);
       describe('And: an Authorizer that wraps an AccessToken with ADMIN role for both the AuthorizableResource and the AssociatedResource', () => {
         const authHeader = createAuthHeader(
           {
@@ -217,78 +220,32 @@ describe(`Given: a permission matrix that gives:
         const authorizer = new Authorizer(authHeader, SECRET);
         authorizer.authenticate();
         describe(`When: asking for permissions to execute an Action included in the Roles for Group identified by the name of the ClassResource:User`, () => {
-          describe('And: not overriding default attribute', () => {
-            describe('And: not specifying a resource', () => {
-              test('Then: authorization via `can()` is granted', () => {
-                // Delete the User implicitly identified by User.id.
-                // Allowed because a this accessToken has Admin Rights on the u_hashid,
-                // and per Matrix, Admin rights on a u_hashid allow deletion.
-                expect(authorizer.can(Actions.DELETE, classResource, [matrix])).toBe(true);
-              });
-            });
-            describe('And: specifying the associated Resource:Division', () => {
-              // Delete the User implicitly identified by User.division_id
-              // Denied because this accessToken has Admin rights on the user.division_id
-              // And per Matrix, Admin rights on a user.division_id rejects deletion.
-              test('Then: authorization is denied', () => {
-                expect(
-                  authorizer.can(
-                    Actions.DELETE,
-                    classResource,
-                    [matrix],
-                    undefined,
-                    Resource.Division
-                  )
-                ).toBe(false);
-              });
+          describe('And: not providing an explicit `attribute:resource` map', () => {
+            test('Then: authorization via `can()` is granted', () => {
+              // Delete the User implicitly identified by User.id.
+              // Allowed because a this accessToken has Admin Rights on the u_hashid,
+              // and per Matrix, Admin rights on a u_hashid allow deletion.
+              expect(authorizer.can(Actions.DELETE, classResource, [matrix])).toBe(true);
             });
           });
-          describe('And: overriding default attribute', () => {
-            describe('And: not specifying a resource', () => {
-              // Delete the User explicitly identified by User.id
-              // Allowed beacuse this accessToken has Admin rights on the user.id
-              // And per matrix, Admin rights on a User allows deletion
-              test('Then: authorization via `can()` is allowed', () => {
-                expect(authorizer.can(Actions.DELETE, classResource, [matrix], 'id')).toBe(true);
-              });
-            });
-            describe('And: specifying the associated Resource:Division', () => {
-              // Delete the User explicitly identified by User.id, explicitly checked against Division rules.
-              // Denied because this accessToken has Admin rights on the User.division_id
-              // And per matrix, Admin rights on Division denies deletion
-              test('Then: authorization is denied', () => {
-                expect(
-                  authorizer.can(Actions.DELETE, classResource, [matrix], 'id', Resource.Division)
-                ).toBe(false);
-              });
+          describe('And: explicitly mapping `hashid` to `Resource.Division`', () => {
+            // Delete the User implicitly identified by User.division_id
+            // Denied because this accessToken has Admin rights on the user.division_id
+            // And per Matrix, Admin rights on a user.division_id rejects deletion.
+            test('Then: authorization is denied', () => {
+              const map = new Map<string, Set<Resource>>();
+              map.set('hashid', new Set([Resource.Division]));
+              expect(authorizer.can(Actions.DELETE, classResource, [matrix], map)).toBe(false);
             });
           });
-          describe('And: overriding default attribute with multiple attributes where one is valid', () => {
-            describe('And: not specifying a resource', () => {
-              // Delete the User explicitly identified by User.id or User.division_id
-              // Allowed beacuse this accessToken has Admin rights on the user.id and user.division_id
-              // And per matrix, Admin rights on a User allows deletion
-              test('Then: authorization via `can()` is allowed', () => {
-                expect(
-                  authorizer.can(Actions.DELETE, classResource, [matrix], ['id', 'division_id'])
-                ).toBe(true);
-              });
-            });
-          });
-          describe('And: overriding default attribute with multiple attributes where none are valid', () => {
-            describe('And: not specifying a resource', () => {
-              // Request the User explicitly identified by User.owner_id or User.counterparty_id
-              // Not allowed beacuse this accessToken has does not have Admin rights on the user.owner_id or the user.counterparty_id
-              test('Then: authorization via `can()` is denied', () => {
-                expect(
-                  authorizer.can(
-                    Actions.REQUEST,
-                    classResource,
-                    [matrix],
-                    ['owner_id', 'counterparty_id']
-                  )
-                ).toBe(false);
-              });
+          describe('And: explicitly mapping both `owner_id` and `counterparty_id` to `Resource.User`', () => {
+            const map = new Map<string, Set<Resource>>();
+            map.set('owner_id', new Set([Resource.User]));
+            map.set('counterparty_id', new Set([Resource.User]));
+            // Request the User explicitly identified by User.owner_id or User.counterparty_id
+            // Not allowed beacuse this accessToken has does not have Admin rights on the user.owner_id or the user.counterparty_id
+            test('Then: authorization via `can()` is denied', () => {
+              expect(authorizer.can(Actions.REQUEST, classResource, [matrix], map)).toBe(false);
             });
           });
         });

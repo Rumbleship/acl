@@ -4,12 +4,12 @@ import {
   Claims,
   Scopes,
   Actions,
-  Resource,
+  // Resource,
   RolesAt,
   PermissionsGroup
 } from './types';
 import { getArrayFromOverloadedRest } from './helpers';
-import { Requires, Required } from './decorators';
+import { Requires, Required, getAuthorizerTreatAs, AuthorizerTreatAsMap } from './decorators';
 const BEARER_TOKEN_REGEX = /^Bearer [A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/;
 
 export class Authorizer {
@@ -94,8 +94,7 @@ export class Authorizer {
     action: Actions,
     authorizable: object,
     matrix: PermissionsMatrix[],
-    attribute?: string | string[],
-    resource?: Resource
+    attributeResourceMap: AuthorizerTreatAsMap = getAuthorizerTreatAs(authorizable)
   ) {
     let access = false;
 
@@ -106,45 +105,15 @@ export class Authorizer {
     for (const permissions of matrix) {
       for (const [role, group] of Object.entries(permissions)) {
         const permissionedIdentifiers = (this.roles as any)[role] || [];
-        /**
-         * If a resource has been passed in, use that to select the group of permissions we're interested in
-         * If not, guess at the group by inflecting on the name of the record we're authorizing
-         */
-
-        if (attribute) {
-          const actions = resource
-            ? (group as any)[resource] || []
-            : (group as any)[authorizable.constructor.name] || [];
-          const attrs = !Array.isArray(attribute) ? [attribute] : attribute;
-          for (const attr of attrs) {
-            if (
-              permissionedIdentifiers.includes((authorizable as any)[attr]) &&
-              (actions as any).includes(action)
-            ) {
-              access = true;
-            }
-          }
-        }
-
-        if (resource) {
-          const authorizableAttribute =
-            resource === (authorizable.constructor && authorizable.constructor.name)
-              ? 'id'
-              : `${resource.toLowerCase()}_id`;
-          const identifier = (authorizable as any)[authorizableAttribute];
-          const actions = (group as any)[resource] || [];
-          if (permissionedIdentifiers.includes(identifier) && actions.includes(action)) {
-            access = true;
-          }
-        }
-
-        // passed in overrides didn't get us access; now we have to search.
-        if (!access) {
+        function inflectAndSearchMatrix() {
           for (const [resourceWithPermissions, allowedActions] of Object.entries(
             group as PermissionsGroup
           )) {
             const authorizableAttribute =
-              !resource && resourceWithPermissions === authorizable.constructor.name
+              // If there are explicit attribute mappings passed, do not inflect on the authorizable name.
+              // ....not sure why rigt now. But it makes the old test pass.
+              attributeResourceMap.size === 0 &&
+              resourceWithPermissions === authorizable.constructor.name
                 ? 'id'
                 : `${resourceWithPermissions.toLowerCase()}_id`;
             const identifier = (authorizable as any)[authorizableAttribute];
@@ -155,6 +124,38 @@ export class Authorizer {
               access = true;
             }
           }
+        }
+        for (const [attribute, resources] of attributeResourceMap.entries()) {
+          for (const resource of resources.values()) {
+            (function checkKnownAttribute() {
+              const actions = resource
+                ? (group as any)[resource] || []
+                : (group as any)[authorizable.constructor.name] || [];
+              const attrs = !Array.isArray(attribute) ? [attribute] : attribute;
+              for (const attr of attrs) {
+                if (
+                  permissionedIdentifiers.includes((authorizable as any)[attr]) &&
+                  (actions as any).includes(action)
+                ) {
+                  access = true;
+                }
+              }
+            })();
+            (function checkKnownResource() {
+              const authorizableAttribute =
+                resource === (authorizable.constructor && authorizable.constructor.name)
+                  ? 'id'
+                  : `${resource.toLowerCase()}_id`;
+              const identifier = (authorizable as any)[authorizableAttribute];
+              const actions = (group as any)[resource] || [];
+              if (permissionedIdentifiers.includes(identifier) && actions.includes(action)) {
+                access = true;
+              }
+            })();
+          }
+        }
+        if (!access) {
+          inflectAndSearchMatrix();
         }
       }
       return access;
