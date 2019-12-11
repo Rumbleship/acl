@@ -1,7 +1,7 @@
 import { Roles, Actions, PermissionsMatrix, Resource } from './../types';
 import { Authorizer } from './../authorizer';
 import { createAuthHeader } from '../helpers';
-import { AuthorizedResource, AuthorizedAttribute } from '../decorators';
+import { AuthorizerTreatAs } from '../decorators';
 
 const SECRET = 'signingsecret';
 const user_id = 'u_abcde';
@@ -46,49 +46,100 @@ const matrix: PermissionsMatrix = {
 
 class SuperClass {
   superCallCount: number = 0;
-  permissionedMethod(header: string): boolean {
+  constructor(public user_id: string) {}
+  permissionedByExternalAuthorizable(header: string): boolean {
     this.superCallCount++;
     const authorizer = new Authorizer(header, SECRET);
     authorizer.authenticate();
-    const attribute = Reflect.get(this, Symbol.for(`permissionedMethodAuthorizedAttribute`));
-    const r = Reflect.get(this, Symbol.for(`permissionedMethodAuthorizedResource`));
-    if (authorizer.can(Actions.QUERY, authorizable, [matrix], attribute, r)) {
+    if (authorizer.can(Actions.QUERY, authorizable, [matrix])) {
+      return true;
+    }
+    return false;
+  }
+  reflexiveMethod(header: string): boolean {
+    this.superCallCount++;
+    const authorizer = new Authorizer(header, SECRET);
+    authorizer.authenticate();
+    if (authorizer.can(Actions.QUERY, this, [matrix])) {
       return true;
     }
     return false;
   }
 }
 
-class AuthorizedSubClass extends SuperClass {
-  subCallCount: number = 0;
-  @AuthorizedAttribute('owner_id')
-  @AuthorizedResource('User')
-  permissionedMethod(header: string): boolean {
-    this.subCallCount++;
-    const superValue = super.permissionedMethod(header);
-    return superValue;
+class PropertyDecoratorSubclass extends SuperClass {
+  @AuthorizerTreatAs(Resource.User)
+  public owner_id: string;
+
+  constructor(public user_id: string, owner_id: string) {
+    super(user_id);
+    this.owner_id = owner_id;
   }
 }
 
-describe('Scenario: A Subclass can decorate a method that invokes the authorizer to adjust `attribute` and/or `resource` passed to Authorizer', () => {
-  test('The superclass allows a request from a permissioned user, and fails one from an unpermissioned', () => {
-    const mySuper = new SuperClass();
-    expect(mySuper.permissionedMethod(userOfUserRelatedToAuthorizableeHeader)).toBe(true);
-    expect(mySuper.superCallCount).toBe(1);
-    expect(mySuper.permissionedMethod(userOfOwnerRelatedToAuthorizable)).toBe(false);
-    expect(mySuper.superCallCount).toBe(2);
-    expect(mySuper.permissionedMethod(pendingUserAuthHeader)).toBe(false);
-    expect(mySuper.superCallCount).toBe(3);
-  });
-  test('A subclass can decorate its overridden version to extend auth, and not reimplement all features of superclass method ', () => {
-    const mySub = new AuthorizedSubClass();
-    expect(mySub.permissionedMethod(userOfOwnerRelatedToAuthorizable)).toBe(true);
-    expect(mySub.superCallCount).toBe(1);
-    expect(mySub.subCallCount).toBe(1);
-    expect(mySub.permissionedMethod(userOfUserRelatedToAuthorizableeHeader)).toBe(true);
-    expect(mySub.superCallCount).toBe(2);
-    expect(mySub.subCallCount).toBe(2);
-    expect(mySub.permissionedMethod(pendingUserAuthHeader)).toBe(false);
-    expect(mySub.superCallCount).toBe(3);
+describe('Given: instance of a subclass that extends super', () => {
+  const mySuper = new SuperClass(user_id);
+  const mySub = new PropertyDecoratorSubclass(user_id, owner_id);
+  describe('And: the subclass has decorated a property to force processing of `owner_id` as a reference to a `Resource.User`', () => {
+    describe('And: the permissioned action uses a wholly different object to permission on', () => {
+      describe('When: invoking method with a jwt that matches on `user_id`', () => {
+        test('Then: the superclass passes: inflected to `user_id`', () => {
+          expect(
+            mySuper.permissionedByExternalAuthorizable(userOfUserRelatedToAuthorizableeHeader)
+          ).toBe(true);
+        });
+        test('Then: the subclass passes: inflected to `user_id`', () => {
+          expect(
+            mySub.permissionedByExternalAuthorizable(userOfUserRelatedToAuthorizableeHeader)
+          ).toBe(true);
+        });
+      });
+      describe('When: invoking method with a jwt that matches on `owner_id`', () => {
+        test('Then: the superclass fails: cannot inflect', () => {
+          expect(mySuper.permissionedByExternalAuthorizable(userOfOwnerRelatedToAuthorizable)).toBe(
+            false
+          );
+        });
+        test('Then: the subclass fails: cannot inflect', () => {
+          expect(mySub.permissionedByExternalAuthorizable(userOfOwnerRelatedToAuthorizable)).toBe(
+            false
+          );
+        });
+      });
+      describe('When: invoking method with a jwt that has no roles that match', () => {
+        test('Then: the superclass fails: no roles', () => {
+          expect(mySuper.permissionedByExternalAuthorizable(pendingUserAuthHeader)).toBe(false);
+        });
+        test('Then: the subclass fails: no roles', () => {
+          expect(mySub.permissionedByExternalAuthorizable(pendingUserAuthHeader)).toBe(false);
+        });
+      });
+    });
+    describe('And: the action being permissioned does so reflexively (e.g. passes `this` to .can()`)', () => {
+      describe('When: invoking method with a jwt that matches on `user_id`', () => {
+        test('Then: the superclass passes: inflected to `user_id`', () => {
+          expect(mySuper.reflexiveMethod(userOfUserRelatedToAuthorizableeHeader)).toBe(true);
+        });
+        test('Then: the subclass passes: inflected to `user_id`', () => {
+          expect(mySub.reflexiveMethod(userOfUserRelatedToAuthorizableeHeader)).toBe(true);
+        });
+      });
+      describe('When: invoking method with a jwt that matches on `owner_id`', () => {
+        test('Then: the superclass fails: cannot inflect to `owner_id`', () => {
+          expect(mySuper.reflexiveMethod(userOfOwnerRelatedToAuthorizable)).toBe(false);
+        });
+        test('Then: the subclass passes: property decorator forces consideration of `owner_id` as a reference to `Resource.User`', () => {
+          expect(mySub.reflexiveMethod(userOfOwnerRelatedToAuthorizable)).toBe(true);
+        });
+      });
+      describe('When: invoking method with a jwt that has no roles that match', () => {
+        test('Then: the superclass fails: no roles', () => {
+          expect(mySuper.reflexiveMethod(pendingUserAuthHeader)).toBe(false);
+        });
+        test('Then: the subclass fails: no roles', () => {
+          expect(mySub.reflexiveMethod(pendingUserAuthHeader)).toBe(false);
+        });
+      });
+    });
   });
 });
