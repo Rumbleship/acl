@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [UNRELEASED]
 
 ### Added
+### Removed
+### Changed
+### Fixed
+### Deprecated
+### Security
+
+
+## [0.0.2] -- 2019-08-14
+
+### Added
   * DivisionAdmin scope
   * `.prettierignore` file
   * Skeleton for generating and consuming `refreshTokens`
@@ -18,10 +28,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
   * `Actions.PURCHASE`, `Actions.SHIP` and `Actions.RETURN` values are now uppercase
   * `can` accepts either an attribute or a list of attributes
-### Fixed
-### Deprecated
-### Security
-
 
 ## [0.0.1] -- 2019-07-17
 
