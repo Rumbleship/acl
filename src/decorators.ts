@@ -38,6 +38,7 @@ export function Requires(methodName: string | symbol): MethodDecorator {
  *        or specifically: [[r1, [a1,a2]], [r2, [a3, a4]]]
  *   2. Object shaped, {k1: v1, k2: v2};
  *        or specifically: {r1: [a1, a2], r2: [a3, a4]}
+ * This parameter is transformed and used to set values on the {{this}} Map; it **should only be accessed** via standard Map methods; e.g. `.get()`, `.has()`
  */
 export class AuthorizerTreatAsMap extends Map<Resource, Set<string>> {
   constructor(
