@@ -1,3 +1,4 @@
+import { Permissions } from './permissions-matrix';
 import * as jwt from 'jsonwebtoken';
 import {
   PermissionsMatrix,
@@ -9,7 +10,8 @@ import {
   // PermissionsGroup
 } from './types';
 import { getArrayFromOverloadedRest } from './helpers';
-import { Requires, Required, getAuthorizerTreatAs, AuthorizerTreatAsMap } from './decorators';
+import { Requires, Required } from './required.decorator';
+import { AuthorizerTreatAsMap, getAuthorizerTreatAs } from './authorizer-treat-as.directive';
 const BEARER_TOKEN_REGEX = /^Bearer [A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/;
 
 export class Authorizer {
@@ -119,13 +121,24 @@ export class Authorizer {
   public can(
     action: Actions,
     authorizable: object,
-    matrix: PermissionsMatrix | PermissionsMatrix[],
+    matrix: Permissions | PermissionsMatrix | PermissionsMatrix[],
     attributeResourceMap: AuthorizerTreatAsMap = getAuthorizerTreatAs(authorizable)
   ) {
     let access = false;
 
     if (this.inScope(Scopes.SYSADMIN)) {
       return true;
+    }
+
+    if (matrix instanceof Permissions) {
+      for (const [role, resourceActions] of matrix.entries()) {
+        for (const [resource, actions] of resourceActions.entries()) {
+          for (const anAction of actions) {
+            access = matrix.allows({ role, at: resource, to: anAction });
+          }
+        }
+      }
+      return access;
     }
 
     for (const permissions of Array.isArray(matrix) ? matrix : [matrix]) {

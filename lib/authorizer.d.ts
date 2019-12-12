@@ -1,5 +1,6 @@
+import { Permissions } from './permissions-matrix';
 import { PermissionsMatrix, Claims, Scopes, Actions, RolesAt } from './types';
-import { AuthorizerTreatAsMap } from './decorators';
+import { AuthorizerTreatAsMap } from './authorizer-treat-as.directive';
 export declare class Authorizer {
     private authorizationHeader;
     private secret;
@@ -28,7 +29,32 @@ export declare class Authorizer {
      * be associated with them, e.g. `Division: [buyer_id, supplier_id]`. Defaults to inflecting
      * `_id` suffix for each resource, and automatically collects whatever directives have been set
      *  via the `@AuthorizerTreatAs` decorator.
+     *
+     * @example: ```
+     *   // Partial...
+     *   const matrix = {
+     *     [Roles.USER]: {
+     *       [Resource.User]: [Actions.READ, Actions.UPDATE, Actions.CREATE],
+     *       [Resource.Division]: [Actions.READ]
+     *     },
+     *     [Roles.ADMIN]: {
+     *       [Resource.Division]: [Actions.CREATE, Actions.UPDATE, Actions.READ]
+     *     }
+     *   }
+     *   class Workflow {
+     *     @AuthorizerTreatAs(Resource.Division)
+     *     counterparty_id: string;
+     *     @AuthorizerTreatAs(Resource.Division)
+     *     division_id: string;
+     *     @AuthorizerTreatAs(Resource.User)
+     *     owner_id: string;
+     *     constructor(owner_id: string) {}
+     *   }
+     *   const authorizer = new Authorizer(jwt.encode({roles: [user: {user:['u_abcde']}]})).authenticate()
+     *   authorizer.can(Actions.READ, new Workflow('u_abcde'), matrix ) // true;
+     *   authorizer.can(Actions.READ, new Workflow('u_12345'), matrix ) // false;
+     * ```
      */
-    can(action: Actions, authorizable: object, matrix: PermissionsMatrix[], attributeResourceMap?: AuthorizerTreatAsMap): boolean;
+    can(action: Actions, authorizable: object, matrix: Permissions | PermissionsMatrix | PermissionsMatrix[], attributeResourceMap?: AuthorizerTreatAsMap): boolean;
     inScope(...scopeOrScopeArray: Array<Scopes | Scopes[]>): boolean;
 }
