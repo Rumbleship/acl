@@ -89,12 +89,37 @@ export class Authorizer {
    * be associated with them, e.g. `Division: [buyer_id, supplier_id]`. Defaults to inflecting
    * `_id` suffix for each resource, and automatically collects whatever directives have been set
    *  via the `@AuthorizerTreatAs` decorator.
+   *
+   * @example: ```
+   *   // Partial...
+   *   const matrix = {
+   *     [Roles.USER]: {
+   *       [Resource.User]: [Actions.READ, Actions.UPDATE, Actions.CREATE],
+   *       [Resource.Division]: [Actions.READ]
+   *     },
+   *     [Roles.ADMIN]: {
+   *       [Resource.Division]: [Actions.CREATE, Actions.UPDATE, Actions.READ]
+   *     }
+   *   }
+   *   class Workflow {
+   *     @AuthorizerTreatAs(Resource.Division)
+   *     counterparty_id: string;
+   *     @AuthorizerTreatAs(Resource.Division)
+   *     division_id: string;
+   *     @AuthorizerTreatAs(Resource.User)
+   *     owner_id: string;
+   *     constructor(owner_id: string) {}
+   *   }
+   *   const authorizer = new Authorizer(jwt.encode({roles: [user: {user:['u_abcde']}]})).authenticate()
+   *   authorizer.can(Actions.READ, new Workflow('u_abcde'), matrix ) // true;
+   *   authorizer.can(Actions.READ, new Workflow('u_12345'), matrix ) // false;
+   * ```
    */
   @Requires('authenticate')
   public can(
     action: Actions,
     authorizable: object,
-    matrix: PermissionsMatrix[],
+    matrix: PermissionsMatrix | PermissionsMatrix[],
     attributeResourceMap: AuthorizerTreatAsMap = getAuthorizerTreatAs(authorizable)
   ) {
     let access = false;
@@ -103,16 +128,13 @@ export class Authorizer {
       return true;
     }
 
-    for (const permissions of matrix) {
+    for (const permissions of Array.isArray(matrix) ? matrix : [matrix]) {
       for (const [role, group] of Object.entries(permissions)) {
-        const permissionedIdentifiers = (this.roles as any)[role] || [];
+        const permissionedIdentifiers = new Set<string>((this.roles as any)[role] || []);
         for (const [resource, attributes] of attributeResourceMap.entries()) {
-          const actions = (group as any)[resource] || [];
+          const actions = new Set<Actions>((group as any)[resource] || []);
           for (const attr of attributes) {
-            if (
-              permissionedIdentifiers.includes((authorizable as any)[attr]) &&
-              (actions as any).includes(action)
-            ) {
+            if (permissionedIdentifiers.has((authorizable as any)[attr]) && actions.has(action)) {
               access = true;
             }
           }

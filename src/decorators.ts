@@ -52,6 +52,10 @@ export class AuthorizerTreatAsMap extends Map<Resource, Set<string>> {
         this.add(k, v);
       }
     } else {
+      // tslint:disable-next-line: no-console
+      console.warn(
+        'DEPRECATED: Initializing a map with object-format. Use standard new Map([[]]) syntax'
+      );
       for (const resource in this._initializedWith) {
         // tslint:disable-next-line: forin
         this.add(resource as Resource, Reflect.get(this._initializedWith, resource));
