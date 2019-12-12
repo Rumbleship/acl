@@ -17,12 +17,13 @@ export declare class AuthorizerTreatAsMap extends Map<Resource, Set<string>> {
     });
     add(k: Resource, v: string | string[]): void;
 }
+export declare const AuthResourceSymbol: unique symbol;
 /**
  *
  * @param resource The resource that should be explicitly connected to the target
  *  property being decorated.
  */
-export declare function AuthorizerTreatAs(resource: Resource): PropertyDecorator;
+export declare function AuthorizerTreatAs(resource: Resource): ParameterDecorator & PropertyDecorator;
 /**
  *
  * @param authorizable Any potentially authorizable object

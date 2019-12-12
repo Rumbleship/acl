@@ -67,21 +67,59 @@ export class AuthorizerTreatAsMap extends Map<Resource, Set<string>> {
   }
 }
 
-const AuthResourceSymbol = Symbol('AuthResourceSymbol');
+export const AuthResourceSymbol = Symbol('AuthResourceSymbol');
 /**
  *
  * @param resource The resource that should be explicitly connected to the target
  *  property being decorated.
  */
-export function AuthorizerTreatAs(resource: Resource): PropertyDecorator {
-  return (target: object, propertyKey: string | symbol) => {
+export function AuthorizerTreatAs(resource: Resource): ParameterDecorator & PropertyDecorator {
+  function propertyDecoratorImpl(target: object, propertyKey: string | symbol) {
     const retrieved: AuthorizerTreatAsMap = Reflect.getMetadata(AuthResourceSymbol, target);
     const treatAsMap = retrieved || new AuthorizerTreatAsMap();
     treatAsMap.add(resource, propertyKey.toString());
     Reflect.defineMetadata(AuthResourceSymbol, treatAsMap, target);
+  }
+  // Cannot apply parameter decorators to constructors and add metadata based on the property
+  // see: https://github.com/microsoft/TypeScript/issues/15904
+  // function parameterDecoratorImpl(
+  //   target: object,
+  //   propertyKey: string | symbol,
+  //   _parameterIndex: number
+  // ) {
+  //   const retrieved: AuthorizerTreatAsMap = Reflect.getMetadata(AuthResourceSymbol, target);
+  //   const treatAsMap = retrieved || new AuthorizerTreatAsMap();
+  //   treatAsMap.add(resource, propertyKey.toString());
+  //   Reflect.defineMetadata(AuthResourceSymbol, treatAsMap, target);
+  // }
+  return (...args: PropertyDecoratorArgs) => {
+    propertyDecoratorImpl(args[0], args[1]);
+    // args.length === 2
+    //   ? propertyDecoratorImpl(args[0], args[1])
+    //   : parameterDecoratorImpl(args[0], args[1], (args as ParameterDecoratorArgs)[2]);
   };
-}
 
+  // return (target: object, propertyKey: string | symbol) => {
+  //   const retrieved: AuthorizerTreatAsMap = Reflect.getMetadata(AuthResourceSymbol, target);
+  //   const treatAsMap = retrieved || new AuthorizerTreatAsMap();
+  //   treatAsMap.add(resource, propertyKey.toString());
+  //   Reflect.defineMetadata(AuthResourceSymbol, treatAsMap, target);
+  // };
+}
+//  declare type PropertyDecorator = (target: Object, propertyKey: string | symbol) => void;
+// declare type ParameterDecorator = (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
+
+// tslint:disable-next-line: ban-types
+interface PropertyDecoratorArgs extends Array<Object | string | symbol> {
+  // tslint:disable-next-line: ban-types
+  0: Object;
+  1: string | symbol;
+}
+// interface ParameterDecoratorArgs extends Array<Object | string | symbol | number> {
+//   0: Object;
+//   1: string | symbol;
+//   2: number;
+// }
 /**
  *
  * @param authorizable Any potentially authorizable object
