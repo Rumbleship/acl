@@ -1,7 +1,7 @@
 import { Roles, Actions, PermissionsMatrix, Resource } from './../types';
 import { Authorizer } from './../authorizer';
 import { createAuthHeader } from '../helpers';
-import { AuthorizerTreatAs } from '../decorators';
+import { AuthorizerTreatAs, getAuthorizerTreatAs } from '../decorators';
 
 const SECRET = 'signingsecret';
 const user_id = 'u_abcde';
@@ -143,5 +143,19 @@ describe('Given: instance of a subclass that extends super', () => {
         });
       });
     });
+  });
+});
+
+describe('Unit: getAuthorizerTreatAs', () => {
+  test('It inflects; returning a Map populated with all ResourceIds that match the passed `authorizable`', () => {
+    const undecoratedAuthorizable: object = {
+      user_id: 'foo',
+      division_id: 'bar'
+    };
+    const map = getAuthorizerTreatAs(undecoratedAuthorizable);
+    expect(map.get(Resource.User)!.has('user_id')).toBe(true);
+    expect(map.get(Resource.Division)!.has('division_id')).toBe(true);
+    expect(map.get(Resource.Order)!.has('id')).toBe(true);
+    expect(map.get(Resource.Order)!.size).toBe(1);
   });
 });

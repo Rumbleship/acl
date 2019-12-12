@@ -24,9 +24,10 @@ export declare class Authorizer {
      * @param action The action under consideration, typically query|mutation in GQL
      * @param authorizable The record being authorized before being returned to the requesting User
      * @param matrix The permission matrix defined in the GQL model via Authorized decorator
-     * @param attribute? Explicitly indicate how to index into the `authorizable`
-     * @param resource? Explicitly indicate which group in the matrix should be permissioned
-     *                  against.
+     * @param attributeResourceMap A map that connects `Resources` to a `Set<attributes>` that should
+     * be associated with them, e.g. `Division: [buyer_id, supplier_id]`. Defaults to inflecting
+     * `_id` suffix for each resource, and automatically collects whatever directives have been set
+     *  via the `@AuthorizerTreatAs` decorator.
      */
     can(action: Actions, authorizable: object, matrix: PermissionsMatrix[], attributeResourceMap?: AuthorizerTreatAsMap): boolean;
     inScope(...scopeOrScopeArray: Array<Scopes | Scopes[]>): boolean;

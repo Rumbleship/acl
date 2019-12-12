@@ -5,8 +5,8 @@ import {
   Scopes,
   Actions,
   // Resource,
-  RolesAt,
-  PermissionsGroup
+  RolesAt
+  // PermissionsGroup
 } from './types';
 import { getArrayFromOverloadedRest } from './helpers';
 import { Requires, Required, getAuthorizerTreatAs, AuthorizerTreatAsMap } from './decorators';
@@ -85,9 +85,10 @@ export class Authorizer {
    * @param action The action under consideration, typically query|mutation in GQL
    * @param authorizable The record being authorized before being returned to the requesting User
    * @param matrix The permission matrix defined in the GQL model via Authorized decorator
-   * @param attribute? Explicitly indicate how to index into the `authorizable`
-   * @param resource? Explicitly indicate which group in the matrix should be permissioned
-   *                  against.
+   * @param attributeResourceMap A map that connects `Resources` to a `Set<attributes>` that should
+   * be associated with them, e.g. `Division: [buyer_id, supplier_id]`. Defaults to inflecting
+   * `_id` suffix for each resource, and automatically collects whatever directives have been set
+   *  via the `@AuthorizerTreatAs` decorator.
    */
   @Requires('authenticate')
   public can(
@@ -95,8 +96,6 @@ export class Authorizer {
     authorizable: object,
     matrix: PermissionsMatrix[],
     attributeResourceMap: AuthorizerTreatAsMap = getAuthorizerTreatAs(authorizable)
-
-    // Group as a class not a type?
   ) {
     let access = false;
 
@@ -107,55 +106,16 @@ export class Authorizer {
     for (const permissions of matrix) {
       for (const [role, group] of Object.entries(permissions)) {
         const permissionedIdentifiers = (this.roles as any)[role] || [];
-        function inflectAndSearchMatrix() {
-          for (const [resourceWithPermissions, allowedActions] of Object.entries(
-            group as PermissionsGroup
-          )) {
-            const authorizableAttribute =
-              // If there are explicit attribute mappings passed, do not inflect on the authorizable name.
-              // ....not sure why rigt now. But it makes the old test pass.
-              attributeResourceMap.size === 0 &&
-              resourceWithPermissions === authorizable.constructor.name
-                ? 'id'
-                : `${resourceWithPermissions.toLowerCase()}_id`;
-            const identifier = (authorizable as any)[authorizableAttribute];
+        for (const [resource, attributes] of attributeResourceMap.entries()) {
+          const actions = (group as any)[resource] || [];
+          for (const attr of attributes) {
             if (
-              permissionedIdentifiers.includes(identifier) &&
-              (allowedActions as any).includes(action)
+              permissionedIdentifiers.includes((authorizable as any)[attr]) &&
+              (actions as any).includes(action)
             ) {
               access = true;
             }
           }
-        }
-        for (const [attribute, resource] of attributeResourceMap.entries()) {
-          (function checkKnownAttribute() {
-            const actions = resource
-              ? (group as any)[resource] || []
-              : (group as any)[authorizable.constructor.name] || [];
-            const attrs = !Array.isArray(attribute) ? [attribute] : attribute;
-            for (const attr of attrs) {
-              if (
-                permissionedIdentifiers.includes((authorizable as any)[attr]) &&
-                (actions as any).includes(action)
-              ) {
-                access = true;
-              }
-            }
-          })();
-          (function checkKnownResource() {
-            const authorizableAttribute =
-              resource === (authorizable.constructor && authorizable.constructor.name)
-                ? 'id'
-                : `${resource.toLowerCase()}_id`;
-            const identifier = (authorizable as any)[authorizableAttribute];
-            const actions = (group as any)[resource] || [];
-            if (permissionedIdentifiers.includes(identifier) && actions.includes(action)) {
-              access = true;
-            }
-          })();
-        }
-        if (!access) {
-          inflectAndSearchMatrix();
         }
       }
       return access;

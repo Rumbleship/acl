@@ -3,7 +3,7 @@ import * as jwt from 'jsonwebtoken';
 import * as moment from 'moment';
 import { Authorizer, createAuthHeader } from './../index';
 import { Roles, Resource, Actions, Scopes } from './../types';
-import { AuthorizerTreatAs } from './../decorators';
+import { AuthorizerTreatAs, AuthorizerTreatAsMap } from './../decorators';
 import { baseRoles } from '../helpers';
 const SECRET = 'signingsecret';
 describe(`Given: a permission matrix that gives:
@@ -85,9 +85,12 @@ describe(`Given: a permission matrix that gives:
         describe('When: asking for an allowed Action against an owned Resource', () => {
           describe.each([Actions.QUERY, Actions.APPROVE])('%s:b_abcde', action => {
             test('Then: authorization via `can()` is granted', () => {
-              const map = new Map<string, Set<Resource>>();
-              map.set('hashid', new Set([Resource.Division]));
+              const map = new AuthorizerTreatAsMap({
+                [Resource.Division]: ['hashid']
+              });
               expect(authorizer.can(action, resource, [matrix], map)).toBe(true);
+              const map1 = new AuthorizerTreatAsMap([[Resource.Division, ['hashid']]]);
+              expect(authorizer.can(action, resource, [matrix], map1)).toBe(true);
             });
           });
         });
@@ -233,15 +236,17 @@ describe(`Given: a permission matrix that gives:
             // Denied because this accessToken has Admin rights on the user.division_id
             // And per Matrix, Admin rights on a user.division_id rejects deletion.
             test('Then: authorization is denied', () => {
-              const map = new Map<string, Set<Resource>>();
-              map.set('hashid', new Set([Resource.Division]));
+              const map = new AuthorizerTreatAsMap();
+              map.add(Resource.Division, 'hashid');
               expect(authorizer.can(Actions.DELETE, classResource, [matrix], map)).toBe(false);
             });
           });
           describe('And: explicitly mapping both `owner_id` and `counterparty_id` to `Resource.User`', () => {
-            const map = new Map<string, Set<Resource>>();
-            map.set('owner_id', new Set([Resource.User]));
-            map.set('counterparty_id', new Set([Resource.User]));
+            const map = new AuthorizerTreatAsMap({
+              [Resource.User]: ['owner_id', 'counterparty_id']
+            });
+            // map.add(Resource.User, 'owner_id');
+            // map.add(Resource.User, 'counterparty_id');
             // Request the User explicitly identified by User.owner_id or User.counterparty_id
             // Not allowed beacuse this accessToken has does not have Admin rights on the user.owner_id or the user.counterparty_id
             test('Then: authorization via `can()` is denied', () => {

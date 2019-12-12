@@ -38,6 +38,18 @@ export enum GrantTypes {
   ACCESS = 'access'
 }
 
+// WIP for cleaner consumption. Commented for now as irrelevant to commit.
+// export class PermissionsGroupClass extends Map<Resource, Set<Actions>> {
+//   // ideal: [k: Resource]: Set<Actions>
+//   [k: string]: any;
+//   constructor(private readonly groupDefinition: PermissionsGroup) {
+//     super();
+//     for (const [resource, listOfActions] of Object.entries(this.groupDefinition)) {
+//       this.set(resource as Resource, new Set<Actions>(listOfActions as Actions[]));
+//     }
+//   }
+// }
+
 export type PermissionsGroup = {
   // Only Resources defined are valid to permission on,
   // but all are not required to be permissioned on.
@@ -67,4 +79,9 @@ export interface RefreshClaims {
 export interface Claims extends AccessClaims, RefreshClaims {
   exp: Date;
   iat: Date;
+}
+
+export interface ResourceAttributeAsMapConstructor extends Array<Resource | string[]> {
+  0: Resource;
+  1: string[];
 }

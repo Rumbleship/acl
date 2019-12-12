@@ -56,3 +56,7 @@ export interface Claims extends AccessClaims, RefreshClaims {
     exp: Date;
     iat: Date;
 }
+export interface ResourceAttributeAsMapConstructor extends Array<Resource | string[]> {
+    0: Resource;
+    1: string[];
+}
