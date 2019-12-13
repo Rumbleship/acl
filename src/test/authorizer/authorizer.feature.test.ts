@@ -1,5 +1,5 @@
 import { Authorizer } from './../../authorizer';
-import { Roles, Resource, Actions } from './../../types';
+import { Roles, Resource, Actions, Scopes } from './../../types';
 import { Permissions } from './../../permissions-matrix';
 import { createAuthHeader } from '../../helpers';
 import { AuthorizerTreatAs } from '../../authorizer-treat-as.directive';
@@ -51,16 +51,6 @@ describe('Working with an explicitly listed Action', () => {
   describe('Scenario: matching on default attribute:id || reflexive self-permissioning of core Authorizables (User|Division)', () => {
     describe('Given: A matrix that allows Role:Admins of Resource:User to Actions:Delete', () => {
       const matrix = new Permissions();
-      // matrix.allow({
-      //   role: Roles.ADMIN,
-      //   at: Resource.Division,
-      //   to: [Actions.CREATE, Actions.QUERY]
-      // });
-      // matrix.allow({
-      //   role: Roles.USER,
-      //   at: Resource.Division,
-      //   to: [Actions.QUERY]
-      // });
       matrix.allow({
         role: Roles.ADMIN,
         at: Resource.User,
@@ -214,16 +204,6 @@ describe('Working with an unlisted action', () => {
   describe('Scenario: matching on default attribute:id || reflexive self-permissioning of core Authorizables (User|Division)', () => {
     describe('Given: A matrix that allows Role:Admins of Resource:User to Actions:Delete', () => {
       const matrix = new Permissions();
-      // matrix.allow({
-      //   role: Roles.ADMIN,
-      //   at: Resource.Division,
-      //   to: [Actions.CREATE, Actions.QUERY]
-      // });
-      // matrix.allow({
-      //   role: Roles.USER,
-      //   at: Resource.Division,
-      //   to: [Actions.QUERY]
-      // });
       matrix.allow({
         role: Roles.ADMIN,
         at: Resource.User,
@@ -268,6 +248,106 @@ describe('Working with an unlisted action', () => {
           });
         });
       });
+    });
+  });
+});
+
+describe('Feature: methods throw if the authorizer has not yet been authenticated', () => {
+  describe('Given: two authorizers, one authenticated, one not, exist', () => {
+    const id = 'b_abcde';
+    const authHeader = createAuthHeader(
+      {
+        roles: {
+          [Roles.ADMIN]: [id],
+          [Roles.USER]: [],
+          [Roles.PENDING]: []
+        },
+        user: 'u_abcde',
+        client: 'here for good measure',
+        scopes: [Scopes.BANKINGADMIN]
+      },
+      SECRET
+    );
+    const unauthenticated = new Authorizer(authHeader, SECRET);
+    const authenticated = new Authorizer(authHeader, SECRET);
+    beforeAll(() => {
+      authenticated.authenticate();
+    });
+    describe.each(['getUser', 'getRoles', 'getClient', 'inScope'])(
+      'When: invoking %s on the unauthenticated authorizer',
+      methodName => {
+        test('Then: an error is thrown', () => {
+          expect(() => (unauthenticated as any)[methodName]()).toThrowError();
+        });
+      }
+    );
+    describe.each(['getUser', 'getRoles', 'getClient', 'inScope'])(
+      'When: invoking %s on the authenticated authorizer',
+      methodName => {
+        test('Then: no error is thrown', () => {
+          expect(() => (authenticated as any)[methodName]()).not.toThrowError();
+        });
+      }
+    );
+    test('Then: inScope passes args through decorator', () => {
+      expect(authenticated.inScope(Scopes.BANKINGADMIN)).toBe(true);
+      expect(authenticated.inScope([Scopes.BANKINGADMIN])).toBe(true);
+    });
+  });
+});
+
+describe('Feature: `inScope()` always returns true for a system administrator', () => {
+  describe('Given: A user with an authHeader that contains SYSADMIN scope', () => {
+    const id = 'u_12345';
+    const authHeader = createAuthHeader(
+      {
+        roles: {
+          [Roles.ADMIN]: [id],
+          [Roles.USER]: [],
+          [Roles.PENDING]: []
+        },
+        scopes: [Scopes.SYSADMIN]
+      },
+      SECRET
+    );
+    const authorizer = new Authorizer(authHeader, SECRET);
+    authorizer.authenticate();
+    describe('When: asking for a more specific scope, e.g. BANKINGADMIN', () => {
+      test('Then: `inScope()` returns true', () => {
+        expect(authorizer.inScope(Scopes.BANKINGADMIN)).toBe(true);
+      });
+    });
+  });
+});
+describe('Feature: `inScope()` accepts an array or a single scope', () => {
+  const id = 'u_12345';
+  const authHeader = createAuthHeader(
+    {
+      roles: {
+        [Roles.ADMIN]: [id],
+        [Roles.USER]: [],
+        [Roles.PENDING]: []
+      },
+      scopes: [Scopes.BANKINGADMIN]
+    },
+    SECRET
+  );
+  const authorizer = new Authorizer(authHeader, SECRET);
+  authorizer.authenticate();
+  describe('When querying inScope with a single parameter', () => {
+    test('Then: a missing scope fails', () => {
+      expect(authorizer.inScope(Scopes.ORDERADMIN)).toBe(false);
+    });
+    test('Then: a present scope passes', () => {
+      expect(authorizer.inScope(Scopes.BANKINGADMIN)).toBe(true);
+    });
+  });
+  describe('When querying inScope with an array parameter', () => {
+    test('Then: a missing scope fails', () => {
+      expect(authorizer.inScope([Scopes.ORDERADMIN])).toBe(false);
+    });
+    test('Then: a present scope passes', () => {
+      expect(authorizer.inScope([Scopes.BANKINGADMIN])).toBe(true);
     });
   });
 });

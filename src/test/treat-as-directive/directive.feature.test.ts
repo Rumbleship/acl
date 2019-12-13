@@ -1,5 +1,6 @@
+import { Permissions } from './../../permissions-matrix';
 import { Authorizer } from '../../authorizer';
-import { Roles, PermissionsMatrix, Resource, Actions } from '../../types';
+import { Roles, Resource, Actions } from '../../types';
 import { createAuthHeader } from '../../helpers';
 import { AuthorizerTreatAs } from '../../authorizer-treat-as.directive';
 
@@ -40,9 +41,13 @@ const pendingUserAuthHeader = createAuthHeader(
   },
   SECRET
 );
-const matrix: PermissionsMatrix = {
-  [Roles.USER]: { [Resource.User]: [Actions.QUERY] }
-};
+
+const matrix = new Permissions();
+matrix.allow({
+  role: Roles.USER,
+  at: Resource.User,
+  to: [Actions.QUERY]
+});
 
 class SuperClass {
   superCallCount: number = 0;
@@ -52,7 +57,7 @@ class SuperClass {
     this.superCallCount++;
     const authorizer = new Authorizer(header, SECRET);
     authorizer.authenticate();
-    if (authorizer.can(Actions.QUERY, authorizable, [matrix])) {
+    if (authorizer.can(Actions.QUERY, authorizable, matrix)) {
       return true;
     }
     return false;
@@ -61,7 +66,7 @@ class SuperClass {
     this.superCallCount++;
     const authorizer = new Authorizer(header, SECRET);
     authorizer.authenticate();
-    if (authorizer.can(Actions.QUERY, this, [matrix])) {
+    if (authorizer.can(Actions.QUERY, this, matrix)) {
       return true;
     }
     return false;
