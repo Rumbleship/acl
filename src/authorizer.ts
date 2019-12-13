@@ -1,12 +1,13 @@
+import { OneToUniqueManyMap } from './utils/one-to-unique-many-map';
 import { Permissions } from './permissions-matrix';
 import * as jwt from 'jsonwebtoken';
 import {
-  PermissionsMatrix,
   Claims,
   Scopes,
   Actions,
   // Resource,
-  RolesAt
+  // RolesAt,
+  Roles
   // PermissionsGroup
 } from './types';
 import { getArrayFromOverloadedRest } from './helpers';
@@ -14,14 +15,22 @@ import { Requires, Required } from './required.decorator';
 import { AuthorizerTreatAsMap, getAuthorizerTreatAs } from './authorizer-treat-as.directive';
 const BEARER_TOKEN_REGEX = /^Bearer [A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/;
 
+class RolesAndIdentifiers extends OneToUniqueManyMap<Roles, string> {}
+
 export class Authorizer {
   private accessToken: string;
   private user?: string; // oid.
   private client?: string;
-  private roles?: RolesAt;
   private scopes?: Scopes[] = [];
   private owner?: string;
+  private _roles?: RolesAndIdentifiers;
 
+  get roles(): RolesAndIdentifiers {
+    return this._roles || new RolesAndIdentifiers();
+  }
+  set roles(v: RolesAndIdentifiers) {
+    this._roles = v;
+  }
   constructor(private authorizationHeader: string, private secret: string) {
     if (!this.authorizationHeader) {
       throw new Error('`authorizationHeader` is required by Authorizer');
@@ -44,11 +53,16 @@ export class Authorizer {
       this.secret
     ) as Claims;
     this.user = user;
-    this.roles = roles;
     this.scopes = scopes;
     this.client = client;
     this.owner = owner;
-    return !!this.roles;
+    this.roles = new RolesAndIdentifiers();
+    for (const [role, group] of Object.entries(roles)) {
+      if (group) {
+        this.roles.add(role as Roles, group);
+      }
+    }
+    return !!roles;
   }
 
   @Requires('authenticate')
@@ -57,8 +71,8 @@ export class Authorizer {
   }
 
   @Requires('authenticate')
-  getRoles(): RolesAt {
-    return this.roles as RolesAt;
+  getRoles() {
+    return this.roles;
   }
 
   @Requires('authenticate')
@@ -84,10 +98,10 @@ export class Authorizer {
    * Type-GraphQL compatible method that singularly answers the question:
    * "Given the accessToken that this Authorizer represents:
    *    - can I take an Action against an Authorizable object, given a set of Permissions"
-   * @param action The action under consideration, typically query|mutation in GQL
+   * @param requestedAction The action under consideration, typically query|mutation in GQL
    * @param authorizable The record being authorized before being returned to the requesting User
    * @param matrix The permission matrix defined in the GQL model via Authorized decorator
-   * @param attributeResourceMap A map that connects `Resources` to a `Set<attributes>` that should
+   * @param treateAuthorizableAttributesAs A map that connects `Resources` to a `Set<attributes>` that should
    * be associated with them, e.g. `Division: [buyer_id, supplier_id]`. Defaults to inflecting
    * `_id` suffix for each resource, and automatically collects whatever directives have been set
    *  via the `@AuthorizerTreatAs` decorator.
@@ -119,10 +133,10 @@ export class Authorizer {
    */
   @Requires('authenticate')
   public can(
-    action: Actions,
+    requestedAction: Actions,
     authorizable: object,
-    matrix: Permissions | PermissionsMatrix | PermissionsMatrix[],
-    attributeResourceMap: AuthorizerTreatAsMap = getAuthorizerTreatAs(authorizable)
+    matrix: Permissions,
+    treatAuthorizableAttributesAs: AuthorizerTreatAsMap = getAuthorizerTreatAs(authorizable)
   ) {
     let access = false;
 
@@ -130,30 +144,27 @@ export class Authorizer {
       return true;
     }
 
-    if (matrix instanceof Permissions) {
-      for (const [role, resourceActions] of matrix.entries()) {
-        for (const [resource, actions] of resourceActions.entries()) {
-          for (const anAction of actions) {
-            access = matrix.allows({ role, at: resource, to: anAction });
-          }
+    for (const [role, roleAtResourceCanDoThis] of matrix.entries()) {
+      for (const [resource, allowedActions] of roleAtResourceCanDoThis.entries()) {
+        if (!allowedActions.has(requestedAction)) {
+          access = false;
+          break;
         }
-      }
-      return access;
-    }
-
-    for (const permissions of Array.isArray(matrix) ? matrix : [matrix]) {
-      for (const [role, group] of Object.entries(permissions)) {
-        const permissionedIdentifiers = new Set<string>((this.roles as any)[role] || []);
-        for (const [resource, attributes] of attributeResourceMap.entries()) {
-          const actions = new Set<Actions>((group as any)[resource] || []);
-          for (const attr of attributes) {
-            if (permissionedIdentifiers.has((authorizable as any)[attr]) && actions.has(action)) {
-              access = true;
+        for (const permissionedIdentifier of this.roles.get(role)) {
+          for (const checkThisAttribute of treatAuthorizableAttributesAs.get(resource)) {
+            const value = Reflect.get(authorizable, checkThisAttribute);
+            const authorizableMatchesOnAttr = value === permissionedIdentifier;
+            const actionIsAllowed = matrix.allows({
+              role,
+              at: resource,
+              to: requestedAction
+            });
+            if (authorizableMatchesOnAttr && actionIsAllowed) {
+              return true;
             }
           }
         }
       }
-      return access;
     }
     return access;
   }
