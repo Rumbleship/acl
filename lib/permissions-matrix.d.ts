@@ -30,6 +30,6 @@ export declare class Permissions extends Map<Roles, ResourceActionsMap> {
  */
 export interface AllowRoleAtTo {
     role: Roles;
-    at: Resource;
+    at: Resource | string;
     to: Actions | Actions[];
 }

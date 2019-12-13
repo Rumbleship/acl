@@ -1,4 +1,3 @@
-import { RefreshClaims } from './types';
 export declare enum Roles {
     ADMIN = "admin",
     USER = "user",
