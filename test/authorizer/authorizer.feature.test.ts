@@ -359,6 +359,15 @@ describe('Feature: a user can ask an authorizer for a list of ids that have perm
           );
         });
       });
+      describe('When: asking for ids that can perform an action: READ', () => {
+        const possibles = authorizer.identifiersThatCan({
+          action: Actions.READ,
+          matrix
+        });
+        test(`Then: the known id ${buyer_id} is returned`, () => {
+          expect(possibles.includes(buyer_id)).toBe(true);
+        });
+      });
     });
   });
 });
