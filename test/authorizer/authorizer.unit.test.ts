@@ -1,8 +1,8 @@
 import moment = require('moment');
 import * as tk from 'timekeeper';
 import * as jwt from 'jsonwebtoken';
-import { Authorizer } from './../../authorizer';
-import { baseRoles } from '../../helpers';
+import { Authorizer } from './../../src/authorizer';
+import { baseRoles } from './../../src/helpers';
 const SECRET = 'signingsecret';
 describe('An Authorizer only accepts a properly formatted `Bearer {{jwt.claims.here}}', () => {
   test.each([

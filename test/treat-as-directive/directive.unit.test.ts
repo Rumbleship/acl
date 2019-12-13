@@ -2,8 +2,8 @@ import {
   AuthorizerTreatAs,
   AuthResourceSymbol,
   getAuthorizerTreatAs
-} from '../../authorizer-treat-as.directive';
-import { Resource } from '../../types';
+} from './../../src/authorizer-treat-as.directive';
+import { Resource } from './../../src/types';
 
 describe('Unit: @AuthorizeTreatAs', () => {
   test('Decorating an attribute adds that attribute to the metadata map under specified resource', () => {

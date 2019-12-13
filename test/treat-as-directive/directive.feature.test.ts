@@ -1,8 +1,8 @@
-import { Permissions } from './../../permissions-matrix';
-import { Authorizer } from '../../authorizer';
-import { Roles, Resource, Actions } from '../../types';
-import { createAuthHeader } from '../../helpers';
-import { AuthorizerTreatAs } from '../../authorizer-treat-as.directive';
+import { Permissions } from './../../src/permissions-matrix';
+import { Authorizer } from './../../src/authorizer';
+import { Roles, Resource, Actions } from './../../src/types';
+import { createAuthHeader } from './../../src/helpers';
+import { AuthorizerTreatAs } from './../../src/authorizer-treat-as.directive';
 
 const SECRET = 'signingsecret';
 const user_id = 'u_abcde';

@@ -1,5 +1,5 @@
-import { Permissions } from '../../permissions-matrix';
-import { Roles, Resource, Actions } from '../../types';
+import { Permissions } from './../../src/permissions-matrix';
+import { Roles, Resource, Actions } from './../../src/types';
 test('A specific role->resource associations can be granted a single action', () => {
   const matrix = new Permissions();
   matrix.allow({ role: Roles.USER, at: Resource.Division, to: Actions.READ });

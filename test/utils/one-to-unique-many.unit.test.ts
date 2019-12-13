@@ -1,4 +1,5 @@
-import { OneToUniqueManyMap } from './../../utils/one-to-unique-many-map';
+import { OneToUniqueManyMap } from './../../src/utils/one-to-unique-many-map';
+
 enum SomeEnum {
   FOO = 'FOO',
   BAR = 'BAR'
