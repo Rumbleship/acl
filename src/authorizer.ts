@@ -1,15 +1,7 @@
 import { OneToUniqueManyMap } from './utils/one-to-unique-many-map';
 import { Permissions } from './permissions-matrix';
 import * as jwt from 'jsonwebtoken';
-import {
-  Claims,
-  Scopes,
-  Actions,
-  // Resource,
-  // RolesAt,
-  Roles
-  // PermissionsGroup
-} from './types';
+import { Claims, Scopes, Actions, Roles } from './types';
 import { getArrayFromOverloadedRest } from './helpers';
 import { Requires, Required } from './required.decorator';
 import { AuthorizerTreatAsMap, getAuthorizerTreatAs } from './authorizer-treat-as.directive';

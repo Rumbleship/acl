@@ -32,12 +32,6 @@ export declare enum GrantTypes {
     REFRESH = "refresh",
     ACCESS = "access"
 }
-export declare type PermissionsGroup = {
-    [key in Resource]?: Actions[];
-};
-export declare type PermissionsMatrix = {
-    [key in Roles]?: PermissionsGroup;
-};
 export declare type RolesAt = {
     [key in Roles]?: string[];
 };

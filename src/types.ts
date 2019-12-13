@@ -38,28 +38,6 @@ export enum GrantTypes {
   ACCESS = 'access'
 }
 
-// WIP for cleaner consumption. Commented for now as irrelevant to commit.
-// export class PermissionsGroupClass extends Map<Resource, Set<Actions>> {
-//   // ideal: [k: Resource]: Set<Actions>
-//   [k: string]: any;
-//   constructor(private readonly groupDefinition: PermissionsGroup) {
-//     super();
-//     for (const [resource, listOfActions] of Object.entries(this.groupDefinition)) {
-//       this.set(resource as Resource, new Set<Actions>(listOfActions as Actions[]));
-//     }
-//   }
-// }
-
-export type PermissionsGroup = {
-  // Only Resources defined are valid to permission on,
-  // but all are not required to be permissioned on.
-  [key in Resource]?: Actions[];
-};
-
-export type PermissionsMatrix = {
-  [key in Roles]?: PermissionsGroup;
-};
-
 // "I have role X at resources [A, B, C]"
 export type RolesAt = {
   [key in Roles]?: string[]; // should be Oid[]
