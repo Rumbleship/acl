@@ -3,13 +3,14 @@ import { Permissions } from './../../src/permissions-matrix';
 import { Roles, Resource, Scopes, Actions } from './../../src/types';
 import { createAuthHeader } from './../../src/helpers';
 import { AuthorizerTreatAs } from './../../src/authorizer-treat-as.directive';
+import { Oid } from '@rumbleship/oid';
 
 const SECRET = 'signingsecret';
 
-const user_id = 'u_abcde';
-const another_user_id = 'u_12345';
-const buyer_id = 'b_12345';
-const supplier_id = 's_8eho0o9';
+const user_id = Oid.create('User', 1).oid;
+const another_user_id = Oid.create('User', 2).oid;
+const buyer_id = Oid.create('Buyer', 1).oid;
+const supplier_id = Oid.create('Supplier', 2).oid;
 
 const adminOfUserIdHeader = createAuthHeader(
   {
@@ -52,15 +53,6 @@ const adminOfBuyerIdHeader = createAuthHeader(
   },
   SECRET
 );
-// const userOfBuyerHeader = createAuthHeader(
-//   {
-//     roles: {
-//       [Roles.USER]: [buyer_id]
-//     },
-//     scopes: []
-//   },
-//   SECRET
-// );
 
 describe('Working with an explicitly listed Action', () => {
   describe('Scenario: matching on default attribute:id || reflexive self-permissioning of core Authorizables (User|Division)', () => {

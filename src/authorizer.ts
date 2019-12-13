@@ -1,7 +1,8 @@
-import { OneToUniqueManyMap } from './utils/one-to-unique-many-map';
-import { Permissions, ResourceActionsMap } from './permissions-matrix';
 import * as jwt from 'jsonwebtoken';
-import { Claims, Scopes, Actions, Roles } from './types';
+import { Oid } from '@rumbleship/oid';
+import { OneToUniqueManyMap } from './utils/one-to-unique-many-map';
+import { Permissions } from './permissions-matrix';
+import { Claims, Scopes, Actions, Roles, Resource } from './types';
 import { getArrayFromOverloadedRest } from './helpers';
 import { Requires, Required } from './required.decorator';
 import { AuthorizerTreatAsMap, getAuthorizerTreatAs } from './authorizer-treat-as.directive';
@@ -169,16 +170,22 @@ export class Authorizer {
     action: Actions | Actions[];
     matrix: Permissions;
   }): string[] {
-    const ids: string[] = [];
-    for (const [role, permissionIdentifiers] of this.roles.entries()) {
-      const resourcesCanDoThis: ResourceActionsMap = matrix.get(role);
-      for (const resource of resourcesCanDoThis.keys()) {
-        for (const possibleId of permissionIdentifiers) {
-          if (matrix.allows({ role, at: resource, to: action })) {
-            ids.push(possibleId);
-          }
-        }
-      }
+    let ids: string[] = [];
+    for (const [role, idsWithRoleFromJWT] of this.roles.entries()) {
+      ids = ids.concat(
+        Array.from(idsWithRoleFromJWT).filter(id => {
+          const resource = new Oid(id).unwrap().scope as Resource;
+          return matrix.allows({ role, at: resource, to: action });
+        })
+      );
+      // A different implementation; which is more readable?
+      //      unsure right now.
+      // for (const possibleId of idsWithRoleFromJWT) {
+      //   const resource: Resource = new Oid(possibleId).unwrap().scope as Resource;
+      //   if (matrix.allows({ role, at: resource, to: action })) {
+      //     ids.push(possibleId);
+      //   }
+      // }
     }
 
     return ids;
