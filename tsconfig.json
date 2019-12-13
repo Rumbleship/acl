@@ -38,9 +38,8 @@
     "baseUrl": "." /* Base directory to resolve non-absolute module names. */,
     // "paths": {},                           /* A series of entries which re-map imports to lookup locations relative to the 'baseUrl'. */
     "rootDirs": [
-      "./src",
-      "./test",
       "./src"
+      // "./test"
     ] /* List of root folders whose combined content represents the structure of the project at runtime. */,
     // "typeRoots": [],     /* List of folders to include type definitions from. */
     // "types": [],                           /* Type declaration files to be included in compilation. */
@@ -56,7 +55,7 @@
     "keyofStringsOnly": true, // this is a breaking change and TODO: check to see if this is stiull needed with future typescript-sequelize and other packages
     "skipLibCheck": true
   },
-  "include": ["src/**/*", "test/**/*", "scripts", "test"],
+  "include": ["src/**/*", "scripts"],
   "exclude": [
     "node_modules/**/*",
     "./node_modules/**/*",
