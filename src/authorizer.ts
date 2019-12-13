@@ -1,5 +1,5 @@
 import { OneToUniqueManyMap } from './utils/one-to-unique-many-map';
-import { Permissions } from './permissions-matrix';
+import { Permissions, ResourceActionsMap } from './permissions-matrix';
 import * as jwt from 'jsonwebtoken';
 import { Claims, Scopes, Actions, Roles } from './types';
 import { getArrayFromOverloadedRest } from './helpers';
@@ -159,6 +159,29 @@ export class Authorizer {
       }
     }
     return access;
+  }
+
+  @Requires('authenticate')
+  identifiersThatCan({
+    action,
+    matrix
+  }: {
+    action: Actions | Actions[];
+    matrix: Permissions;
+  }): string[] {
+    const ids: string[] = [];
+    for (const [role, permissionIdentifiers] of this.roles.entries()) {
+      const resourcesCanDoThis: ResourceActionsMap = matrix.get(role);
+      for (const resource of resourcesCanDoThis.keys()) {
+        for (const possibleId of permissionIdentifiers) {
+          if (matrix.allows({ role, at: resource, to: action })) {
+            ids.push(possibleId);
+          }
+        }
+      }
+    }
+
+    return ids;
   }
 
   inScope(...scopeOrScopeArray: Array<Scopes | Scopes[]>): boolean;

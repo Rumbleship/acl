@@ -7,11 +7,13 @@ import { AuthorizerTreatAs } from './../../src/authorizer-treat-as.directive';
 const SECRET = 'signingsecret';
 
 const user_id = 'u_abcde';
+const another_user_id = 'u_12345';
 const buyer_id = 'b_12345';
 const supplier_id = 's_8eho0o9';
 
-const adminOfUserHeader = createAuthHeader(
+const adminOfUserIdHeader = createAuthHeader(
   {
+    user: user_id,
     roles: {
       [Roles.ADMIN]: [user_id]
     },
@@ -19,8 +21,19 @@ const adminOfUserHeader = createAuthHeader(
   },
   SECRET
 );
-const userOfUserHeader = createAuthHeader(
+const adminOfAnotherUserIdHeader = createAuthHeader(
   {
+    user: user_id,
+    roles: {
+      [Roles.ADMIN]: [user_id, another_user_id]
+    },
+    scopes: []
+  },
+  SECRET
+);
+const userOfUserIdHeader = createAuthHeader(
+  {
+    user: user_id,
     roles: {
       [Roles.USER]: [user_id]
     },
@@ -29,8 +42,9 @@ const userOfUserHeader = createAuthHeader(
   SECRET
 );
 
-const adminOfBuyerHeader = createAuthHeader(
+const adminOfBuyerIdHeader = createAuthHeader(
   {
+    user: user_id,
     roles: {
       [Roles.ADMIN]: [buyer_id]
     },
@@ -59,7 +73,7 @@ describe('Working with an explicitly listed Action', () => {
       });
 
       describe(`And: an authorizer wrapping a JWT that represents a {Role:Admin of instance: ${user_id}}`, () => {
-        const authorizer = new Authorizer(adminOfUserHeader, SECRET);
+        const authorizer = new Authorizer(adminOfUserIdHeader, SECRET);
         authorizer.authenticate();
         class Authorizable {
           constructor(public id: string) {}
@@ -78,7 +92,7 @@ describe('Working with an explicitly listed Action', () => {
         });
       });
       describe(`And: an authorizer wrapping a JWT that represents a {Role:User of instance: ${user_id}}`, () => {
-        const authorizer = new Authorizer(userOfUserHeader, SECRET);
+        const authorizer = new Authorizer(userOfUserIdHeader, SECRET);
         authorizer.authenticate();
         class Authorizable {
           constructor(public id: string) {}
@@ -108,7 +122,7 @@ describe('Working with an explicitly listed Action', () => {
         to: [Actions.DELETE]
       });
       describe(`And: an authorizer wrapping a JWT that represents a {Role:Admin of instance: ${buyer_id}}`, () => {
-        const authorizer = new Authorizer(adminOfBuyerHeader, SECRET);
+        const authorizer = new Authorizer(adminOfBuyerIdHeader, SECRET);
         authorizer.authenticate();
         class Authorizable {
           constructor(public division_id: string) {}
@@ -127,7 +141,7 @@ describe('Working with an explicitly listed Action', () => {
         });
       });
       describe(`And: an authorizer wrapping a JWT that represents a {Role:User of instance: ${buyer_id}}`, () => {
-        const authorizer = new Authorizer(userOfUserHeader, SECRET);
+        const authorizer = new Authorizer(userOfUserIdHeader, SECRET);
         authorizer.authenticate();
         class Authorizable {
           constructor(public id: string) {}
@@ -165,7 +179,7 @@ describe('Working with an explicitly listed Action', () => {
         to: [Actions.DELETE]
       });
       describe(`And: an authorizer wrapping a JWT that represents a {Role:Admin of instance: ${buyer_id}}`, () => {
-        const authorizer = new Authorizer(adminOfBuyerHeader, SECRET);
+        const authorizer = new Authorizer(adminOfBuyerIdHeader, SECRET);
         authorizer.authenticate();
 
         describe(`When: checking if 'Action:delete' is allowed on an Authorizable instance whose 'buyer_id' attribute DOES NOT MATCH:${buyer_id}`, () => {
@@ -182,7 +196,7 @@ describe('Working with an explicitly listed Action', () => {
         });
       });
       describe(`And: an authorizer wrapping a JWT that represents a {Role:User of instance: ${buyer_id}}`, () => {
-        const authorizer = new Authorizer(userOfUserHeader, SECRET);
+        const authorizer = new Authorizer(userOfUserIdHeader, SECRET);
         authorizer.authenticate();
         describe(`When: checking if 'Action:delete' is allowed on an Authorizable instance whose 'buyer_id' attribute DOES NOT MATCH:${buyer_id}`, () => {
           const noMatchOnId = new Authorizable('b_foobar', 's_09aoeud');
@@ -212,7 +226,7 @@ describe('Working with an unlisted action', () => {
       });
 
       describe(`And: an authorizer wrapping a JWT that represents a {Role:Admin of instance: ${user_id}}`, () => {
-        const authorizer = new Authorizer(adminOfUserHeader, SECRET);
+        const authorizer = new Authorizer(adminOfUserIdHeader, SECRET);
         authorizer.authenticate();
         class Authorizable {
           constructor(public id: string) {}
@@ -231,7 +245,7 @@ describe('Working with an unlisted action', () => {
         });
       });
       describe(`And: an authorizer wrapping a JWT that represents a {Role:User of instance: ${user_id}}`, () => {
-        const authorizer = new Authorizer(userOfUserHeader, SECRET);
+        const authorizer = new Authorizer(userOfUserIdHeader, SECRET);
         authorizer.authenticate();
         class Authorizable {
           constructor(public id: string) {}
@@ -247,6 +261,110 @@ describe('Working with an unlisted action', () => {
           test('Then: authorization is denied', () => {
             expect(authorizer.can(Actions.READ, matchOnId, matrix)).toBe(false);
           });
+        });
+      });
+    });
+  });
+});
+describe('Feature: a user can ask an authorizer for a list of ids that have permission to perform a specified set of actions', () => {
+  describe(`Given: A matrix that allows:
+    Role:Admins of Resource:User to Actions:Delete
+    Role:Admins of Resource:Division to Actions:Read `, () => {
+    const matrix = new Permissions();
+    matrix.allow({
+      role: Roles.ADMIN,
+      at: Resource.User,
+      to: [Actions.DELETE]
+    });
+    matrix.allow({
+      role: Roles.ADMIN,
+      at: Resource.Division,
+      to: [Actions.READ]
+    });
+    describe(`And: a JWT that represents a {role:Admin of instance: ${user_id}}`, () => {
+      const authorizer = new Authorizer(adminOfUserIdHeader, SECRET);
+      authorizer.authenticate();
+      describe('When: asking for ids that can perform an allowed action: DELETE', () => {
+        test(`Then: the known id ${user_id} is returned`, () => {
+          expect(authorizer.identifiersThatCan({ action: Actions.DELETE, matrix })).toStrictEqual([
+            user_id
+          ]);
+        });
+      });
+      describe('When: asking for ids that can perform a disallowed action: UPDATE', () => {
+        test(`Then: no ids are returned`, () => {
+          expect(authorizer.identifiersThatCan({ action: Actions.UPDATE, matrix })).toStrictEqual(
+            []
+          );
+        });
+      });
+    });
+    describe(`And: a JWT that represents a {role:Admin of instance: ${another_user_id}}`, () => {
+      const authorizer = new Authorizer(adminOfAnotherUserIdHeader, SECRET);
+      authorizer.authenticate();
+      describe('When: asking for ids that can perform an allowed action: DELETE', () => {
+        const ids = authorizer.identifiersThatCan({
+          action: Actions.DELETE,
+          matrix
+        });
+        test(`Then: the known id of target (${another_user_id}) is returned`, () => {
+          expect(ids.includes(another_user_id)).toBe(true);
+        });
+        test(`Then: the known id of self (${user_id}) is returned`, () => {
+          expect(ids.includes(user_id)).toBe(true);
+        });
+        test('Then: only two ids are returned', () => {
+          expect(ids.length).toBe(2);
+        });
+      });
+      describe('When: asking for ids that can perform a disallowed action: UPDATE', () => {
+        test(`Then: no ids are returned`, () => {
+          expect(authorizer.identifiersThatCan({ action: Actions.UPDATE, matrix })).toStrictEqual(
+            []
+          );
+        });
+      });
+    });
+    describe(`And: a JWT that represents a user with:
+       { user (self): ${user_id},
+         role:Admin of instance: ${another_user_id}, 
+         role:Admin of instance: ${buyer_id},
+         role:User of instance: ${supplier_id} }`, () => {
+      const authorizer = new Authorizer(
+        createAuthHeader(
+          {
+            user: user_id,
+            roles: {
+              [Roles.ADMIN]: [another_user_id, buyer_id],
+              [Roles.USER]: [supplier_id]
+            },
+            scopes: []
+          },
+          SECRET
+        ),
+        SECRET
+      );
+      authorizer.authenticate();
+      describe(`When: asking for ids that can perform an action: DELETE`, () => {
+        const possibles = authorizer.identifiersThatCan({
+          action: Actions.DELETE,
+          matrix
+        });
+        test(`Then: the known id ${another_user_id} is included in returned list`, () => {
+          expect(possibles.includes(another_user_id)).toBe(true);
+        });
+        test(`Then: the known id ${another_user_id} is included in returned list`, () => {
+          expect(possibles.includes(another_user_id)).toBe(true);
+        });
+        test(`Then: a known id whose role matches but under the wrong authorizable resource type `, () => {
+          expect(possibles.includes(buyer_id)).toBe(false);
+        });
+      });
+      describe('When: asking for ids that can perform a disallowed action: UPDATE', () => {
+        test(`Then: no ids are returned`, () => {
+          expect(authorizer.identifiersThatCan({ action: Actions.UPDATE, matrix })).toStrictEqual(
+            []
+          );
         });
       });
     });
