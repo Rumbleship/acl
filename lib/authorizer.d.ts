@@ -60,6 +60,10 @@ export declare class Authorizer {
      * ```
      */
     can(requestedAction: Actions, authorizable: object, matrix: Permissions, treatAuthorizableAttributesAs?: AuthorizerTreatAsMap): boolean;
+    identifiersThatCan({ action, matrix }: {
+        action: Actions | Actions[];
+        matrix: Permissions;
+    }): string[];
     inScope(...scopeOrScopeArray: Array<Scopes | Scopes[]>): boolean;
 }
 export {};
