@@ -1,5 +1,10 @@
 import { Resource, Actions, Roles } from './types';
 import { OneToUniqueManyMap } from './utils/one-to-unique-many-map';
+/**
+ * Lookup table that maps OidScopes to the Authorizable Resource; critical because
+ * both OidScopes:Buyer|Supplier are treated as the samee core Authorizable(Division)
+ */
+export declare const ResourceAsScopesSingleton: Map<string, Resource>;
 export declare class ResourceActionsMap extends OneToUniqueManyMap<Resource, Actions> {
 }
 export declare class Permissions extends Map<Roles, ResourceActionsMap> {

@@ -1,6 +1,6 @@
 import { OneToUniqueManyMap } from './utils/one-to-unique-many-map';
 import { Permissions } from './permissions-matrix';
-import { Claims, Scopes, Actions, Roles } from './types';
+import { Claims, Scopes, Actions, Roles, Resource } from './types';
 import { AuthorizerTreatAsMap } from './authorizer-treat-as.directive';
 declare class RolesAndIdentifiers extends OneToUniqueManyMap<Roles, string> {
 }
@@ -60,9 +60,10 @@ export declare class Authorizer {
      * ```
      */
     can(requestedAction: Actions, authorizable: object, matrix: Permissions, treatAuthorizableAttributesAs?: AuthorizerTreatAsMap): boolean;
-    identifiersThatCan({ action, matrix }: {
+    identifiersThatCan({ action, matrix, only }: {
         action: Actions | Actions[];
         matrix: Permissions;
+        only?: Resource;
     }): string[];
     inScope(...scopeOrScopeArray: Array<Scopes | Scopes[]>): boolean;
 }

@@ -261,7 +261,8 @@ describe('Working with an unlisted action', () => {
 describe('Feature: a user can ask an authorizer for a list of ids that have permission to perform a specified set of actions', () => {
   describe(`Given: A matrix that allows:
     Role:Admins of Resource:User to Actions:Delete
-    Role:Admins of Resource:Division to Actions:Read `, () => {
+    Role:Admins of Resource:Division to Actions:Read 
+    Role: Users of Resource:User to Actions:Read`, () => {
     const matrix = new Permissions();
     matrix.allow({
       role: Roles.ADMIN,
@@ -271,6 +272,11 @@ describe('Feature: a user can ask an authorizer for a list of ids that have perm
     matrix.allow({
       role: Roles.ADMIN,
       at: Resource.Division,
+      to: [Actions.READ]
+    });
+    matrix.allow({
+      role: Roles.USER,
+      at: Resource.User,
       to: [Actions.READ]
     });
     describe(`And: a JWT that represents a {role:Admin of instance: ${user_id}}`, () => {
@@ -366,6 +372,111 @@ describe('Feature: a user can ask an authorizer for a list of ids that have perm
         });
         test(`Then: the known id ${buyer_id} is returned`, () => {
           expect(possibles.includes(buyer_id)).toBe(true);
+        });
+      });
+    });
+    describe(`And: a JWT that represents a user with:
+      { user(self): ${user_id}
+        role:Admin of Division instance: ${buyer_id}
+        role:User of User instance: ${another_user_id}
+      },`, () => {
+      const authorizer = new Authorizer(
+        createAuthHeader(
+          {
+            user: user_id,
+            roles: {
+              [Roles.ADMIN]: [buyer_id],
+              [Roles.USER]: [another_user_id]
+            },
+            scopes: []
+          },
+          SECRET
+        ),
+        SECRET
+      );
+      authorizer.authenticate();
+      describe('When: asking for ids that can READ, unfiltered', () => {
+        test(`Then: the buyer_id ${buyer_id} is returned`, () => {
+          expect(
+            authorizer.identifiersThatCan({ action: Actions.READ, matrix }).includes(buyer_id)
+          ).toBe(true);
+        });
+        test(`Then: the another_user_id ${another_user_id} is returned`, () => {
+          expect(
+            authorizer
+              .identifiersThatCan({ action: Actions.READ, matrix })
+              .includes(another_user_id)
+          ).toBe(true);
+        });
+      });
+      describe('When: asking for ids that can READ, filtered to Resource.Division', () => {
+        test(`Then: the buyer_id ${buyer_id} is returned`, () => {
+          expect(
+            authorizer
+              .identifiersThatCan({
+                action: Actions.READ,
+                matrix,
+                only: Resource.Division
+              })
+              .includes(buyer_id)
+          ).toBe(true);
+        });
+        test(`Then: the another_user_id ${another_user_id} is not returned`, () => {
+          expect(
+            authorizer
+              .identifiersThatCan({
+                action: Actions.READ,
+                matrix,
+                only: Resource.Division
+              })
+              .includes(another_user_id)
+          ).toBe(false);
+        });
+        test(`Then: the user_id ${user_id} is not returned`, () => {
+          expect(
+            authorizer
+              .identifiersThatCan({
+                action: Actions.READ,
+                matrix,
+                only: Resource.Division
+              })
+              .includes(another_user_id)
+          ).toBe(false);
+        });
+      });
+      describe('When: asking for ids that can READ, filtered to Resource.User', () => {
+        test(`Then: the another_user_id ${another_user_id} is returned`, () => {
+          expect(
+            authorizer
+              .identifiersThatCan({
+                action: Actions.READ,
+                matrix,
+                only: Resource.User
+              })
+              .includes(another_user_id)
+          ).toBe(true);
+        });
+        test(`Then: the user_id ${user_id} (e.g. 'user' attribute in JWT) is not returned`, () => {
+          expect(
+            authorizer
+              .identifiersThatCan({
+                action: Actions.READ,
+                matrix,
+                only: Resource.User
+              })
+              .includes(user_id)
+          ).toBe(false);
+        });
+        test(`Then: the buyer_id ${buyer_id} is not returned`, () => {
+          expect(
+            authorizer
+              .identifiersThatCan({
+                action: Actions.READ,
+                matrix,
+                only: Resource.User
+              })
+              .includes(buyer_id)
+          ).toBe(false);
         });
       });
     });

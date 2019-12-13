@@ -1,12 +1,12 @@
+import { Registry } from '@rumbleship/oid';
 import { Resource, Actions, Roles } from './types';
 import { OneToUniqueManyMap } from './utils/one-to-unique-many-map';
-import { Registry } from '@rumbleship/oid';
 
 /**
  * Lookup table that maps OidScopes to the Authorizable Resource; critical because
  * both OidScopes:Buyer|Supplier are treated as the samee core Authorizable(Division)
  */
-const ResourceAsScopesSingleton = new Map<string | Resource, Resource>([
+export const ResourceAsScopesSingleton = new Map<string | Resource, Resource>([
   [Registry.Buyer.name, Resource.Division],
   [Registry.Supplier.name, Resource.Division],
   [Resource.Division, Resource.Division],

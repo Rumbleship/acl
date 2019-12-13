@@ -91,4 +91,9 @@ describe('Given: a matrix exists', () => {
       }
     );
   });
+  describe('When: asking about a Resource|Scope that does not map to an authorizable Resource', () => {
+    test('Then: it returns falsy', () => {
+      expect(matrix.allows({ role: Roles.USER, at: 'FooBar', to: Actions.READ })).toBeFalsy();
+    });
+  });
 });

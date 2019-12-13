@@ -1,7 +1,7 @@
 import * as jwt from 'jsonwebtoken';
 import { Oid } from '@rumbleship/oid';
 import { OneToUniqueManyMap } from './utils/one-to-unique-many-map';
-import { Permissions } from './permissions-matrix';
+import { Permissions, ResourceAsScopesSingleton } from './permissions-matrix';
 import { Claims, Scopes, Actions, Roles, Resource } from './types';
 import { getArrayFromOverloadedRest } from './helpers';
 import { Requires, Required } from './required.decorator';
@@ -165,10 +165,12 @@ export class Authorizer {
   @Requires('authenticate')
   identifiersThatCan({
     action,
-    matrix
+    matrix,
+    only
   }: {
     action: Actions | Actions[];
     matrix: Permissions;
+    only?: Resource;
   }): string[] {
     let ids: string[] = [];
     for (const [role, idsWithRoleFromJWT] of this.roles.entries()) {
@@ -178,16 +180,15 @@ export class Authorizer {
           return matrix.allows({ role, at: resource, to: action });
         })
       );
-      // A different implementation; which is more readable?
-      //      unsure right now.
-      // for (const possibleId of idsWithRoleFromJWT) {
-      //   const resource: Resource = new Oid(possibleId).unwrap().scope as Resource;
-      //   if (matrix.allows({ role, at: resource, to: action })) {
-      //     ids.push(possibleId);
-      //   }
-      // }
     }
-
+    if (only) {
+      ids = ids.filter(id => {
+        const { scope } = new Oid(id).unwrap();
+        const a = ResourceAsScopesSingleton.get(scope);
+        const b = ResourceAsScopesSingleton.get(only);
+        return a === b;
+      });
+    }
     return ids;
   }
 
