@@ -1,5 +1,6 @@
 import { Resource, Actions, Roles } from './types';
 import { OneToUniqueManyMap } from './utils/one-to-unique-many-map';
+
 export class ResourceActionsMap extends OneToUniqueManyMap<Resource, Actions> {}
 export class Permissions extends Map<Roles, ResourceActionsMap> {
   /**
@@ -7,7 +8,7 @@ export class Permissions extends Map<Roles, ResourceActionsMap> {
    * @param param0 an association of Role:Resource:Actions that should be allowed
    */
   allow({ role, at, to }: AllowRoleAtTo): void {
-    const resourceActions = new ResourceActionsMap();
+    const resourceActions = this.get(role) || new ResourceActionsMap();
     resourceActions.add(at, to);
     this.set(role, resourceActions);
   }

@@ -1,5 +1,35 @@
 import { Permissions } from './../../src/permissions-matrix';
 import { Roles, Resource, Actions } from './../../src/types';
+test('Many independent sets of role->resource associations can be allowed', () => {
+  const matrix = new Permissions();
+  matrix.allow({ role: Roles.USER, at: Resource.Division, to: Actions.READ });
+  expect(
+    matrix.allows({
+      role: Roles.USER,
+      at: Resource.Division,
+      to: Actions.READ
+    })
+  ).toBe(true);
+  matrix.allow({ role: Roles.USER, at: Resource.User, to: Actions.READ });
+  expect(
+    matrix.allows({
+      role: Roles.USER,
+      at: Resource.Division,
+      to: Actions.READ
+    })
+  ).toBe(true);
+  expect(matrix.allows({ role: Roles.USER, at: Resource.User, to: Actions.READ })).toBe(true);
+  matrix.allow({ role: Roles.ADMIN, at: Resource.User, to: Actions.CREATE });
+  expect(
+    matrix.allows({
+      role: Roles.USER,
+      at: Resource.Division,
+      to: Actions.READ
+    })
+  ).toBe(true);
+  expect(matrix.allows({ role: Roles.USER, at: Resource.User, to: Actions.READ })).toBe(true);
+  expect(matrix.allows({ role: Roles.ADMIN, at: Resource.User, to: Actions.CREATE })).toBe(true);
+});
 test('A specific role->resource associations can be granted a single action', () => {
   const matrix = new Permissions();
   matrix.allow({ role: Roles.USER, at: Resource.Division, to: Actions.READ });
