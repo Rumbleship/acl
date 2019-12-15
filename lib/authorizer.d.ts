@@ -35,16 +35,10 @@ export declare class Authorizer {
      *  via the `@AuthorizerTreatAs` decorator.
      *
      * @example: ```
-     *   // Partial...
-     *   const matrix = {
-     *     [Roles.USER]: {
-     *       [Resource.User]: [Actions.READ, Actions.UPDATE, Actions.CREATE],
-     *       [Resource.Division]: [Actions.READ]
-     *     },
-     *     [Roles.ADMIN]: {
-     *       [Resource.Division]: [Actions.CREATE, Actions.UPDATE, Actions.READ]
-     *     }
-     *   }
+     *   const matrix = new Permissions();
+     *   matrix.allow({role: Roles.USER, at: Resource.User, to: [Actions.READ, Actions.UPDATE, Actions.CREATE]})
+     *   matrix.allow({role: Roles.USER, at: Resource.Division, to: [Actions.READ]})
+     *   matrix.allow({role: Roles.ADMIN, at: Resource.Division, to: [Actions.CREATE, Actions.UPDATE, Actions.READ]})
      *   class Workflow {
      *     @AuthorizerTreatAs(Resource.Division)
      *     counterparty_id: string;
