@@ -1,4 +1,3 @@
-import { RefreshClaims } from './types';
 export declare enum Roles {
     ADMIN = "admin",
     USER = "user",
@@ -32,12 +31,6 @@ export declare enum GrantTypes {
     REFRESH = "refresh",
     ACCESS = "access"
 }
-export declare type PermissionsGroup = {
-    [key in Resource]?: Actions[];
-};
-export declare type PermissionsMatrix = {
-    [key in Roles]?: PermissionsGroup;
-};
 export declare type RolesAt = {
     [key in Roles]?: string[];
 };
@@ -55,4 +48,8 @@ export interface RefreshClaims {
 export interface Claims extends AccessClaims, RefreshClaims {
     exp: Date;
     iat: Date;
+}
+export interface ResourceAttributeAsMapConstructor extends Array<Resource | string[]> {
+    0: Resource;
+    1: string[];
 }
