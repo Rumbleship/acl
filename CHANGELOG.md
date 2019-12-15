@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file. Starting wi
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [UNRELEASED]
+
+### Added
+  * `AuthorizerTreatAs` property decorator and `getAuthorizerTreatAs()` pair, allowing explicit mapping of a property to the resource it abstracts, e.g.:
+    * `owner_id` to `Resource.User`
+    * `buyer_division_id`, `supplier_division_id` to `Resource.Division`
+    * TODO: make this a parameterDecorator as well
+### Removed
+  * `AuthorizedResource` and `AuthorizedAttribute` decorators
+### Changed
+  * `authorizer.can()` accepts explicit attr/resource overrides as a map; defaults to collating information from decorators
+### Fixed
+### Deprecated
+### Security
+
+
 ## [0.0.2] -- 2019-08-14
 
 ### Added

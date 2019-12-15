@@ -1,25 +1,29 @@
 import * as jwt from 'jsonwebtoken';
-import {
-  PermissionsMatrix,
-  Claims,
-  Scopes,
-  Actions,
-  Resource,
-  RolesAt,
-  PermissionsGroup
-} from './types';
+import { Oid } from '@rumbleship/oid';
+import { OneToUniqueManyMap } from './utils/one-to-unique-many-map';
+import { Permissions, ResourceAsScopesSingleton } from './permissions-matrix';
+import { Claims, Scopes, Actions, Roles, Resource } from './types';
 import { getArrayFromOverloadedRest } from './helpers';
-import { Requires, Required } from './decorators';
+import { Requires, Required } from './required.decorator';
+import { AuthorizerTreatAsMap, getAuthorizerTreatAs } from './authorizer-treat-as.directive';
 const BEARER_TOKEN_REGEX = /^Bearer [A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/;
+
+class RolesAndIdentifiers extends OneToUniqueManyMap<Roles, string> {}
 
 export class Authorizer {
   private accessToken: string;
   private user?: string; // oid.
   private client?: string;
-  private roles?: RolesAt;
   private scopes?: Scopes[] = [];
   private owner?: string;
+  private _roles?: RolesAndIdentifiers;
 
+  get roles(): RolesAndIdentifiers {
+    return this._roles || new RolesAndIdentifiers();
+  }
+  set roles(v: RolesAndIdentifiers) {
+    this._roles = v;
+  }
   constructor(private authorizationHeader: string, private secret: string) {
     if (!this.authorizationHeader) {
       throw new Error('`authorizationHeader` is required by Authorizer');
@@ -42,11 +46,16 @@ export class Authorizer {
       this.secret
     ) as Claims;
     this.user = user;
-    this.roles = roles;
     this.scopes = scopes;
     this.client = client;
     this.owner = owner;
-    return !!this.roles;
+    this.roles = new RolesAndIdentifiers();
+    for (const [role, group] of Object.entries(roles)) {
+      if (group) {
+        this.roles.add(role as Roles, group);
+      }
+    }
+    return !!roles;
   }
 
   @Requires('authenticate')
@@ -55,8 +64,8 @@ export class Authorizer {
   }
 
   @Requires('authenticate')
-  getRoles(): RolesAt {
-    return this.roles as RolesAt;
+  getRoles() {
+    return this.roles;
   }
 
   @Requires('authenticate')
@@ -82,20 +91,39 @@ export class Authorizer {
    * Type-GraphQL compatible method that singularly answers the question:
    * "Given the accessToken that this Authorizer represents:
    *    - can I take an Action against an Authorizable object, given a set of Permissions"
-   * @param action The action under consideration, typically query|mutation in GQL
+   * @param requestedAction The action under consideration, typically query|mutation in GQL
    * @param authorizable The record being authorized before being returned to the requesting User
    * @param matrix The permission matrix defined in the GQL model via Authorized decorator
-   * @param attribute? Explicitly indicate how to index into the `authorizable`
-   * @param resource? Explicitly indicate which group in the matrix should be permissioned
-   *                  against.
+   * @param treateAuthorizableAttributesAs A map that connects `Resources` to a `Set<attributes>` that should
+   * be associated with them, e.g. `Division: [buyer_id, supplier_id]`. Defaults to inflecting
+   * `_id` suffix for each resource, and automatically collects whatever directives have been set
+   *  via the `@AuthorizerTreatAs` decorator.
+   *
+   * @example: ```
+   *   const matrix = new Permissions();
+   *   matrix.allow({role: Roles.USER, at: Resource.User, to: [Actions.READ, Actions.UPDATE, Actions.CREATE]})
+   *   matrix.allow({role: Roles.USER, at: Resource.Division, to: [Actions.READ]})
+   *   matrix.allow({role: Roles.ADMIN, at: Resource.Division, to: [Actions.CREATE, Actions.UPDATE, Actions.READ]})
+   *   class Workflow {
+   *     @AuthorizerTreatAs(Resource.Division)
+   *     counterparty_id: string;
+   *     @AuthorizerTreatAs(Resource.Division)
+   *     division_id: string;
+   *     @AuthorizerTreatAs(Resource.User)
+   *     owner_id: string;
+   *     constructor(owner_id: string) {}
+   *   }
+   *   const authorizer = new Authorizer(jwt.encode({roles: [user: {user:['u_abcde']}]})).authenticate()
+   *   authorizer.can(Actions.READ, new Workflow('u_abcde'), matrix ) // true;
+   *   authorizer.can(Actions.READ, new Workflow('u_12345'), matrix ) // false;
+   * ```
    */
   @Requires('authenticate')
   public can(
-    action: Actions,
+    requestedAction: Actions,
     authorizable: object,
-    matrix: PermissionsMatrix[],
-    attribute?: string | string[],
-    resource?: Resource
+    matrix: Permissions,
+    treatAuthorizableAttributesAs: AuthorizerTreatAsMap = getAuthorizerTreatAs(authorizable)
   ) {
     let access = false;
 
@@ -103,63 +131,59 @@ export class Authorizer {
       return true;
     }
 
-    for (const permissions of matrix) {
-      for (const [role, group] of Object.entries(permissions)) {
-        const permissionedIdentifiers = (this.roles as any)[role] || [];
-        /**
-         * If a resource has been passed in, use that to select the group of permissions we're interested in
-         * If not, guess at the group by inflecting on the name of the record we're authorizing
-         */
-
-        if (attribute) {
-          const actions = resource
-            ? (group as any)[resource] || []
-            : (group as any)[authorizable.constructor.name] || [];
-          const attrs = !Array.isArray(attribute) ? [attribute] : attribute;
-          for (const attr of attrs) {
-            if (
-              permissionedIdentifiers.includes((authorizable as any)[attr]) &&
-              (actions as any).includes(action)
-            ) {
-              access = true;
-            }
-          }
+    for (const [role, roleAtResourceCanDoThis] of matrix.entries()) {
+      for (const [resource, allowedActions] of roleAtResourceCanDoThis.entries()) {
+        if (!allowedActions.has(requestedAction)) {
+          access = false;
+          break;
         }
-
-        if (resource) {
-          const authorizableAttribute =
-            resource === (authorizable.constructor && authorizable.constructor.name)
-              ? 'id'
-              : `${resource.toLowerCase()}_id`;
-          const identifier = (authorizable as any)[authorizableAttribute];
-          const actions = (group as any)[resource] || [];
-          if (permissionedIdentifiers.includes(identifier) && actions.includes(action)) {
-            access = true;
-          }
-        }
-
-        // passed in overrides didn't get us access; now we have to search.
-        if (!access) {
-          for (const [resourceWithPermissions, allowedActions] of Object.entries(
-            group as PermissionsGroup
-          )) {
-            const authorizableAttribute =
-              !resource && resourceWithPermissions === authorizable.constructor.name
-                ? 'id'
-                : `${resourceWithPermissions.toLowerCase()}_id`;
-            const identifier = (authorizable as any)[authorizableAttribute];
-            if (
-              permissionedIdentifiers.includes(identifier) &&
-              (allowedActions as any).includes(action)
-            ) {
-              access = true;
+        for (const permissionedIdentifier of this.roles.get(role)) {
+          for (const checkThisAttribute of treatAuthorizableAttributesAs.get(resource)) {
+            const value = Reflect.get(authorizable, checkThisAttribute);
+            const authorizableMatchesOnAttr = value === permissionedIdentifier;
+            const actionIsAllowed = matrix.allows({
+              role,
+              at: resource,
+              to: requestedAction
+            });
+            if (authorizableMatchesOnAttr && actionIsAllowed) {
+              return true;
             }
           }
         }
       }
-      return access;
     }
     return access;
+  }
+
+  @Requires('authenticate')
+  identifiersThatCan({
+    action,
+    matrix,
+    only
+  }: {
+    action: Actions | Actions[];
+    matrix: Permissions;
+    only?: Resource;
+  }): string[] {
+    let ids: string[] = [];
+    for (const [role, idsWithRoleFromJWT] of this.roles.entries()) {
+      ids = ids.concat(
+        Array.from(idsWithRoleFromJWT).filter(id => {
+          const resource = new Oid(id).unwrap().scope as Resource;
+          return matrix.allows({ role, at: resource, to: action });
+        })
+      );
+    }
+    if (only) {
+      ids = ids.filter(id => {
+        const { scope } = new Oid(id).unwrap();
+        const a = ResourceAsScopesSingleton.get(scope);
+        const b = ResourceAsScopesSingleton.get(only);
+        return a === b;
+      });
+    }
+    return ids;
   }
 
   inScope(...scopeOrScopeArray: Array<Scopes | Scopes[]>): boolean;
