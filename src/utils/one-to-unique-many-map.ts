@@ -4,11 +4,9 @@
  *        or specifically: [[r1, [a1,a2]], [r2, [a3, a4]]]
  */
 export class OneToUniqueManyMap<K, V> extends Map<K, Set<V>> {
-  protected readonly _init!: Array<OneToUniqueManyMapConstructor<K, V>>;
   constructor(_init: Array<OneToUniqueManyMapConstructor<K, V>> = []) {
     super();
-    this._init = _init;
-    for (const [k, v] of this._init) {
+    for (const [k, v] of _init) {
       this.add(k, v);
     }
   }
