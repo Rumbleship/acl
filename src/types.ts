@@ -1,4 +1,3 @@
-// import {Oid, Registry} from '@rumbleship/oid'
 export enum Roles {
   ADMIN = 'admin',
   USER = 'user',
