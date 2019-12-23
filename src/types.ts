@@ -26,6 +26,7 @@ export enum Resource {
 }
 
 export enum Scopes {
+  USER = 'user',
   SYSADMIN = 'system:*',
   BANKINGADMIN = 'banking:*',
   ORDERADMIN = 'orders:*',
