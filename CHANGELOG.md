@@ -8,13 +8,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [UNRELEASED]
 
 ### Added
-  * Scopes.USER
 ### Removed
 ### Changed
 ### Fixed
 ### Deprecated
 ### Security
 
+
+## [1.0.1] -- 2019-12-23
+
+### Added
+  * Scopes.USER
 
 ## [1.0.0] -- 2019-12-15
 
