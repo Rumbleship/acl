@@ -50,7 +50,7 @@ export class Authorizer {
     this.client = client;
     this.owner = owner;
     this.roles = new RolesAndIdentifiers();
-    for (const [role, group] of Object.entries(roles)) {
+    for (const [role, group] of Object.entries(roles || {})) {
       if (group) {
         this.roles.add(role as Roles, group);
       }
