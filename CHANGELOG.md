@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Removed
 ### Changed
 ### Fixed
+  * authorizer.authenticate() no longer throws if passed an access token that has a falsy role object
 ### Deprecated
 ### Security
 
