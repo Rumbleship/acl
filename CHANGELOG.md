@@ -12,10 +12,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
   * o11y fix: authorizer.getUser(), .getRoles() will still return after authenticating an accesstoken -- even if the token has expired
 ### Fixed
-  * authorizer.authenticate() no longer throws if passed an access token that has a falsy role object
 ### Deprecated
 ### Security
 
+
+## [1.0.2] -- 2019-12-24
+
+### Fixed
+  * authorizer.authenticate() no longer throws if passed an access token that has a falsy role object
 
 ## [1.0.1] -- 2019-12-23
 
