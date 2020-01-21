@@ -41,20 +41,19 @@ export class Authorizer {
 
   @Required()
   authenticate(): boolean {
-    const { roles, scopes, user, client, owner } = jwt.verify(
-      this.accessToken,
-      this.secret
-    ) as Claims;
+    const { user, scopes, roles } = jwt.decode(this.accessToken) as Claims;
     this.user = user;
     this.scopes = scopes;
-    this.client = client;
-    this.owner = owner;
     this.roles = new RolesAndIdentifiers();
     for (const [role, group] of Object.entries(roles || {})) {
       if (group) {
         this.roles.add(role as Roles, group);
       }
     }
+    // client and owner are deprecated
+    const { client, owner } = jwt.verify(this.accessToken, this.secret) as Claims;
+    this.client = client;
+    this.owner = owner;
     return !!roles;
   }
 
