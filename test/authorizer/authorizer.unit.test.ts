@@ -1,3 +1,4 @@
+import { InvalidJWTError } from './../../src/errors';
 import moment = require('moment');
 import * as tk from 'timekeeper';
 import * as jwt from 'jsonwebtoken';
@@ -15,7 +16,7 @@ describe('An Authorizer only accepts a properly formatted `Bearer {{jwt.claims.h
   ])(
     'Constructing an Authorizer with an invalid auth header: %s throws',
     (badAuthHeader: string) => {
-      expect(() => new Authorizer(badAuthHeader, SECRET)).toThrow();
+      expect(() => new Authorizer(badAuthHeader, SECRET)).toThrow(InvalidJWTError);
     }
   );
   test('Constructing an authorizer with a valid header `Bearer jwt.claims.here` succeeds', () => {

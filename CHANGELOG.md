@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file. Starting wi
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [UNRELEASED]
+
+### Added
+### Removed
+### Changed
+  * Throw `InvalidJWTError` instead of plain `Error` when constructing an Authorizer with invalid accessToken: https://www.pivotaltracker.com/story/show/171657687
+### Fixed
+### Deprecated
+### Security
+
+
 ## [1.0.3] -- 2020-01-21
 
 ### Changed
