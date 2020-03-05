@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 ### Removed
+  * Approve for publishing build step on merge to master
 ### Changed
 ### Fixed
 ### Deprecated
