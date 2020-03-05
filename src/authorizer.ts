@@ -1,6 +1,7 @@
 import * as jwt from 'jsonwebtoken';
 import { Oid } from '@rumbleship/oid';
 import { OneToUniqueManyMap } from './utils/one-to-unique-many-map';
+import { InvalidJWTError } from './errors';
 import { Permissions, ResourceAsScopesSingleton } from './permissions-matrix';
 import { Claims, Scopes, Actions, Roles, Resource } from './types';
 import { getArrayFromOverloadedRest } from './helpers';
@@ -26,10 +27,12 @@ export class Authorizer {
   }
   constructor(private authorizationHeader: string, private secret: string) {
     if (!this.authorizationHeader) {
-      throw new Error('`authorizationHeader` is required by Authorizer');
+      throw new InvalidJWTError('`authorizationHeader` is required by Authorizer');
     }
     if (!this.authorizationHeader.match(BEARER_TOKEN_REGEX)) {
-      throw new Error('`authorizationHeader` must be in form `Bearer {{jwt.claims.here}}');
+      throw new InvalidJWTError(
+        '`authorizationHeader` must be in form `Bearer {{jwt.claims.here}}'
+      );
     }
 
     this.accessToken = this.authorizationHeader.split(' ')[1];

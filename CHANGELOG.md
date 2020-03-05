@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Removed
 ### Changed
   * o11y fix: authorizer.getUser(), .getRoles() will still return after authenticating an accesstoken -- even if the token has expired
+  * Throw `InvalidJWTError` instead of plain `Error` when constructing an Authorizer with invalid accessToken: https://www.pivotaltracker.com/story/show/171657687
 ### Fixed
 ### Deprecated
 ### Security
