@@ -12,10 +12,10 @@
     "node": "10.x"
   },
   "scripts": {
-    "build": "NODE_PATH=. tsc -p .",
-    "test": "NODE_PATH=. tsc -p . && NODE_PATH=. NODE_ENV=test jest",
+    "build": "NODE_PATH=. tsc -p ./tsconfig-build.json",
+    "test": "NODE_PATH=. tsc -p ./tsconfig-build.json && NODE_PATH=. NODE_ENV=test jest",
     "lint": "NODE_PATH=. tslint --project .",
-    "coverage": "NODE_PATH=. tsc -p . && NODE_PATH=. jest --coverage --coverageReporters=text-lcov | coveralls"
+    "coverage": "NODE_PATH=. tsc -p ./tsconfig-build.json && NODE_PATH=. jest --coverage --coverageReporters=text-lcov | coveralls"
   },
   "devDependencies": {
     "@rumbleship/oid": "git+ssh://git@github.com/rumbleship/oid.git#2.0.0",
@@ -36,10 +36,13 @@
     "ts-node": "^8.0.2",
     "tslint": "^5.10.0",
     "tslint-config-airbnb": "^5.9.2",
-    "tslint-config-prettier": "^1.14.0",
+    "tslint-config-prettier": "^1.18.0",
+    "tslint-config-security": "^1.16.0",
+    "tslint-no-circular-imports": "^0.6.2",
     "tslint-no-focused-test": "^0.5.0",
     "tslint-plugin-prettier": "^2.0.1",
-    "typescript": "^3.4.3",
+    "typescript": "^3.7.3",
+    "typescript-tslint-plugin": "^0.5.5",
     "xxhash": "^0.2.4"
   },
   "jest": {

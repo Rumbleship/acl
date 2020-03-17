@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Removed
   * Approve for publishing build step on merge to master
 ### Changed
+  * Updated tslint.json, tsconfig.json, plugins, etc to support nullish coalescing.
 ### Fixed
 ### Deprecated
 ### Security
