@@ -5,19 +5,14 @@ All notable changes to this project will be documented in this file. Starting wi
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [UNRELEASED]
+## [1.1.1] -- 2020-03-31
 
-### Added
 ### Removed
   * Approve for publishing build step on merge to master
   * `xxhash` dependency
 ### Changed
   * Updated tslint.json, tsconfig.json, plugins, etc to support nullish coalescing.
   * Upgrade to `@rumbleship/acl#4.0.1`
-### Fixed
-### Deprecated
-### Security
-
 
 ## [1.1.0] -- 2020-03-05
 
