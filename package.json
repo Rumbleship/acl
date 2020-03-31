@@ -12,13 +12,13 @@
     "node": "10.x"
   },
   "scripts": {
-    "build": "NODE_PATH=. tsc -p .",
-    "test": "NODE_PATH=. tsc -p . && NODE_PATH=. NODE_ENV=test jest",
+    "build": "NODE_PATH=. tsc -p ./tsconfig-build.json",
+    "test": "NODE_PATH=. tsc -p ./tsconfig-build.json && NODE_PATH=. NODE_ENV=test jest",
     "lint": "NODE_PATH=. tslint --project .",
-    "coverage": "NODE_PATH=. tsc -p . && NODE_PATH=. jest --coverage --coverageReporters=text-lcov | coveralls"
+    "coverage": "NODE_PATH=. tsc -p ./tsconfig-build.json && NODE_PATH=. jest --coverage --coverageReporters=text-lcov | coveralls"
   },
   "devDependencies": {
-    "@rumbleship/oid": "git+ssh://git@github.com/rumbleship/oid.git#2.0.0",
+    "@rumbleship/oid": "git+ssh://git@github.com/rumbleship/oid.git#4.0.1",
     "@rumbleship/spyglass": "git+ssh://git@github.com/rumbleship/spyglass.git#2.0.1",
     "@types/jest": "^24.0.6",
     "@types/jsonwebtoken": "^8.3.2",
@@ -29,24 +29,26 @@
     "hashids": "^1.2.2",
     "jest": "^24.0.0",
     "moment": "^2.24.0",
-    "prettier": "^1.14.3",
+    "prettier": "^1.19.1",
     "prettier-tslint": "^0.4.0",
     "timekeeper": "^2.2.0",
     "ts-jest": "^24.0.0",
     "ts-node": "^8.0.2",
     "tslint": "^5.10.0",
     "tslint-config-airbnb": "^5.9.2",
-    "tslint-config-prettier": "^1.14.0",
+    "tslint-config-prettier": "^1.18.0",
+    "tslint-config-security": "^1.16.0",
+    "tslint-no-circular-imports": "^0.6.2",
     "tslint-no-focused-test": "^0.5.0",
     "tslint-plugin-prettier": "^2.0.1",
-    "typescript": "^3.4.3",
-    "xxhash": "^0.2.4"
+    "typescript": "^3.7.3",
+    "typescript-tslint-plugin": "^0.5.5"
   },
   "jest": {
     "testEnvironment": "node"
   },
   "peerDependencies": {
-    "@rumbleship/oid": "git+ssh://git@github.com/rumbleship/oid.git#2.0.0",
+    "@rumbleship/oid": "git+ssh://git@github.com/rumbleship/oid.git#4.0.1",
     "@rumbleship/spyglass": "git+ssh://git@github.com/rumbleship/spyglass.git#2.0.1",
     "jsonwebtoken": "^8.5.1",
     "reflect-metadata": "^0.1.13"

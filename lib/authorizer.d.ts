@@ -13,7 +13,8 @@ export declare class Authorizer {
     private scopes?;
     private owner?;
     private _roles?;
-    roles: RolesAndIdentifiers;
+    get roles(): RolesAndIdentifiers;
+    set roles(v: RolesAndIdentifiers);
     constructor(authorizationHeader: string, secret: string);
     authenticate(): boolean;
     getUser(): string;
