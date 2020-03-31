@@ -10,8 +10,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 ### Removed
   * Approve for publishing build step on merge to master
+  * `xxhash` dependency
 ### Changed
   * Updated tslint.json, tsconfig.json, plugins, etc to support nullish coalescing.
+  * Upgrade to `@rumbleship/acl#4.0.1`
 ### Fixed
 ### Deprecated
 ### Security

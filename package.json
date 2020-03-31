@@ -18,7 +18,7 @@
     "coverage": "NODE_PATH=. tsc -p ./tsconfig-build.json && NODE_PATH=. jest --coverage --coverageReporters=text-lcov | coveralls"
   },
   "devDependencies": {
-    "@rumbleship/oid": "git+ssh://git@github.com/rumbleship/oid.git#2.0.0",
+    "@rumbleship/oid": "git+ssh://git@github.com/rumbleship/oid.git#4.0.1",
     "@rumbleship/spyglass": "git+ssh://git@github.com/rumbleship/spyglass.git#2.0.1",
     "@types/jest": "^24.0.6",
     "@types/jsonwebtoken": "^8.3.2",
@@ -42,14 +42,13 @@
     "tslint-no-focused-test": "^0.5.0",
     "tslint-plugin-prettier": "^2.0.1",
     "typescript": "^3.7.3",
-    "typescript-tslint-plugin": "^0.5.5",
-    "xxhash": "^0.2.4"
+    "typescript-tslint-plugin": "^0.5.5"
   },
   "jest": {
     "testEnvironment": "node"
   },
   "peerDependencies": {
-    "@rumbleship/oid": "git+ssh://git@github.com/rumbleship/oid.git#2.0.0",
+    "@rumbleship/oid": "git+ssh://git@github.com/rumbleship/oid.git#4.0.1",
     "@rumbleship/spyglass": "git+ssh://git@github.com/rumbleship/spyglass.git#2.0.1",
     "jsonwebtoken": "^8.5.1",
     "reflect-metadata": "^0.1.13"
