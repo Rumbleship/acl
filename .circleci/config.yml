@@ -49,7 +49,7 @@ workflows:
 jobs:
   build:
     docker:
-      - image: circleci/node:10
+      - image: circleci/node:12
     working_directory: ~/repos/acl
     steps:
       - add_ssh_keys: *rumbleship_ops_key
@@ -58,7 +58,7 @@ jobs:
             - v2-git-{{ .Branch }}
       - checkout
       - save_cache:
-          key: v@-git-{{ .Branch }}
+          key: v2-git-{{ .Branch }}
           paths:
             - ".git"
       - restore_cache:

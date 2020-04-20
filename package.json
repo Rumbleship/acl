@@ -2,14 +2,14 @@
   "name": "@rumbleship/acl",
   "version": "1.1.1",
   "authors": [
-    "Isaac Sparling <isaac@rumbleship.com"
+    "Isaac Sparling <isaac@rumbleship.com>"
   ],
   "main": "lib/index.js",
   "description": "Consolidate TypeGraphQL and basic permissioning declarations into a central, queryable store",
   "license": "MIT",
   "private": true,
   "engines": {
-    "node": "10.x"
+    "node": "10.x || 12.x"
   },
   "scripts": {
     "build": "NODE_PATH=. tsc -p ./tsconfig-build.json",
@@ -18,8 +18,7 @@
     "coverage": "NODE_PATH=. tsc -p ./tsconfig-build.json && NODE_PATH=. jest --coverage --coverageReporters=text-lcov | coveralls"
   },
   "devDependencies": {
-    "@rumbleship/oid": "git+ssh://git@github.com/rumbleship/oid.git#4.0.1",
-    "@rumbleship/spyglass": "git+ssh://git@github.com/rumbleship/spyglass.git#2.0.1",
+    "@rumbleship/oid": "git+ssh://git@github.com/rumbleship/oid.git#4.0.2",
     "@types/jest": "^24.0.6",
     "@types/jsonwebtoken": "^8.3.2",
     "@types/node": "^12.0.4",
@@ -48,8 +47,7 @@
     "testEnvironment": "node"
   },
   "peerDependencies": {
-    "@rumbleship/oid": "git+ssh://git@github.com/rumbleship/oid.git#4.0.1",
-    "@rumbleship/spyglass": "git+ssh://git@github.com/rumbleship/spyglass.git#2.0.1",
+    "@rumbleship/oid": "git+ssh://git@github.com/rumbleship/oid.git#4.0.2",
     "jsonwebtoken": "^8.5.1",
     "reflect-metadata": "^0.1.13"
   },
