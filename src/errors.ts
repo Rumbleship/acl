@@ -1,4 +1,2 @@
-import { RFIError } from '@rumbleship/spyglass';
-
-export class RFIAuthError extends RFIError {}
+export class RFIAuthError extends Error {}
 export class InvalidJWTError extends Error {}

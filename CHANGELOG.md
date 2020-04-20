@@ -9,11 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 ### Removed
+  * peer dep on `@rumbleship/spyglass`
 ### Changed
   * package.json engine supports node 12
   * circle builds on node12
   * Upgrade to `@rumbleship/oid#4.0.2`
-  * upgrade to `@rumbleship/spyglass#3.1.3`
 ### Fixed
 ### Deprecated
 ### Security
