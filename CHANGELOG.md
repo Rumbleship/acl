@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 ### Removed
 ### Changed
+  * package.json engine supports node 12
+  * circle builds on node12
 ### Fixed
 ### Deprecated
 ### Security
