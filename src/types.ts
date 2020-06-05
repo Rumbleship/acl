@@ -27,6 +27,7 @@ export enum Resource {
 
 export enum Scopes {
   USER = 'user',
+  API_KEY = 'api_key',
   SYSADMIN = 'system:*',
   BANKINGADMIN = 'banking:*',
   ORDERADMIN = 'orders:*',
