@@ -5,17 +5,11 @@ All notable changes to this project will be documented in this file. Starting wi
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [UNRELEASED]
+## [1.2.1] -- 2020-06-05
 
 ### Added
   * `NEW_JWT_THOUGHTS.md` to collect thoughts on how we may change the jwt to have a deeper, more granular, more data-driven permission structure.
   * `Scopes.API_KEY` to group together the permissions that an `ApiKey` has, but a `User` does not have.
-### Removed
-### Changed
-### Fixed
-### Deprecated
-### Security
-
 
 ## [1.2.0] -- 2020-04-20
 
