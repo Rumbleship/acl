@@ -26,14 +26,21 @@ export function getAuthorizerTreatAs(authorizable: any): AuthorizerTreatAsMap {
 
 /**
  *
- * @param resource The resource that should be explicitly connected to the target
+ * @param singleOrListOfResources The resource that should be explicitly connected to the target
  *  property being decorated.
  */
-export function AuthorizerTreatAs(resource: Resource): ParameterDecorator & PropertyDecorator {
+export function AuthorizerTreatAs(
+  singleOrListOfResources: Resource | Resource[]
+): ParameterDecorator & PropertyDecorator {
   function propertyDecoratorImpl(target: object, propertyKey: string | symbol) {
     const retrieved: AuthorizerTreatAsMap = Reflect.getMetadata(AuthResourceSymbol, target);
     const treatAsMap = retrieved || new AuthorizerTreatAsMap();
-    treatAsMap.add(resource, propertyKey.toString());
+    if (!Array.isArray(singleOrListOfResources)) {
+      singleOrListOfResources = [singleOrListOfResources];
+    }
+    for (const resource of singleOrListOfResources) {
+      treatAsMap.add(resource, propertyKey.toString());
+    }
     Reflect.defineMetadata(AuthResourceSymbol, treatAsMap, target);
   }
   // Cannot apply parameter decorators to constructors and add metadata based on the property
