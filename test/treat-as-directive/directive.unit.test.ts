@@ -72,3 +72,23 @@ describe('Unit: getAuthorizerTreatAs', () => {
     });
   });
 });
+
+describe('Feature: An arbitrary id can be decorated to correspond to multiple resources', () => {
+  describe('Given: a decorated authorizable', () => {
+    class DecoratedAuthorizable {
+      @AuthorizerTreatAs([Resource.Division, Resource.User])
+      arbitrary_id: string = 'quux';
+    }
+
+    test('It assigns decorated properties to the specified resource key as well as inflecting', () => {
+      const authorizable = new DecoratedAuthorizable();
+      const map = getAuthorizerTreatAs(authorizable);
+      expect(map.get(Resource.Division).has('id')).toBe(true);
+      expect(map.get(Resource.Division).has('arbitrary_id')).toBe(true);
+      expect(map.get(Resource.Division).size).toBe(2);
+      expect(map.get(Resource.User).has('id')).toBe(true);
+      expect(map.get(Resource.User).has('arbitrary_id')).toBe(true);
+      expect(map.get(Resource.User).size).toBe(2);
+    });
+  });
+});
