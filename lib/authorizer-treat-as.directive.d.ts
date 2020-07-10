@@ -15,7 +15,7 @@ export declare class AuthorizerTreatAsMap extends OneToUniqueManyMap<Resource, s
 export declare function getAuthorizerTreatAs(authorizable: any): AuthorizerTreatAsMap;
 /**
  *
- * @param resource The resource that should be explicitly connected to the target
+ * @param singleOrListOfResources The resource that should be explicitly connected to the target
  *  property being decorated.
  */
-export declare function AuthorizerTreatAs(resource: Resource): ParameterDecorator & PropertyDecorator;
+export declare function AuthorizerTreatAs(singleOrListOfResources: Resource | Resource[]): ParameterDecorator & PropertyDecorator;
