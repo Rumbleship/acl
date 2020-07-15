@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 ### Removed
 ### Changed
+  * Roll logic for `authorizerTreatAs` to return either with inflected ids, or without -- defaults to with
 ### Fixed
 ### Deprecated
 ### Security
