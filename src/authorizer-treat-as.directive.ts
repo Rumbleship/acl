@@ -11,17 +11,27 @@ export class AuthorizerTreatAsMap extends OneToUniqueManyMap<Resource, string> {
  *    `...{User: new Set(['id', 'user_id'])}`
  *
  */
-export function getAuthorizerTreatAs(authorizable: any): AuthorizerTreatAsMap {
-  const retrieved: AuthorizerTreatAsMap = Reflect.getMetadata(AuthResourceSymbol, authorizable);
-  const treatAsMap = retrieved || new AuthorizerTreatAsMap();
-  for (const resource of Object.keys(Resource)) {
-    treatAsMap.add(resource as Resource, 'id');
-    const key = `${resource.toLowerCase()}_id`;
-    if (Reflect.has(authorizable, key)) {
-      treatAsMap.add(resource as Resource, key);
+export function getAuthorizerTreatAs(
+  authorizable: any,
+  apply_inflected_defaults: boolean = true
+): AuthorizerTreatAsMap {
+  const retrieved: AuthorizerTreatAsMap =
+    Reflect.getMetadata(AuthResourceSymbol, authorizable) ?? new AuthorizerTreatAsMap();
+  const cloned_map = new AuthorizerTreatAsMap();
+  // Add the original values to cloned map
+  for (const [k, v] of retrieved.entries()) {
+    cloned_map.add(k, Array.from(v));
+  }
+  if (apply_inflected_defaults) {
+    for (const resource of Object.keys(Resource)) {
+      cloned_map.add(resource as Resource, 'id');
+      const key = `${resource.toLowerCase()}_id`;
+      if (Reflect.has(authorizable, key)) {
+        cloned_map.add(resource as Resource, key);
+      }
     }
   }
-  return treatAsMap;
+  return cloned_map;
 }
 
 /**
