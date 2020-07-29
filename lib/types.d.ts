@@ -48,8 +48,8 @@ export interface RefreshClaims {
     grant_type: GrantTypes;
 }
 export interface Claims extends AccessClaims, RefreshClaims {
-    exp: Date;
-    iat: Date;
+    exp: number;
+    iat: number;
 }
 export interface ResourceAttributeAsMapConstructor extends Array<Resource | string[]> {
     0: Resource;

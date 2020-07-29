@@ -1,28 +1,36 @@
-import { OneToUniqueManyMap } from './utils/one-to-unique-many-map';
+import * as jwt from 'jsonwebtoken';
 import { Permissions } from './permissions-matrix';
-import { Claims, Scopes, Actions, Roles, Resource } from './types';
+import { Scopes, Actions, Resource, AccessClaims } from './types';
 import { AuthorizerTreatAsMap } from './authorizer-treat-as.directive';
-declare class RolesAndIdentifiers extends OneToUniqueManyMap<Roles, string> {
-}
+import { ISharedSchema } from '@rumbleship/config';
 export declare class Authorizer {
     private authorizationHeader;
-    private secret;
+    private static _initialized;
+    private static _ServiceUser;
+    private static _AccessToken;
+    protected static get config(): Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'>;
     private accessToken;
-    private user?;
-    private client?;
-    private scopes?;
-    private owner?;
-    private _roles?;
-    get roles(): RolesAndIdentifiers;
-    set roles(v: RolesAndIdentifiers);
-    constructor(authorizationHeader: string, secret: string);
-    authenticate(): boolean;
+    private roles;
+    private get user();
+    private get scopes();
+    private _claims?;
+    private get claims();
+    static initialize(config: Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'>): void;
+    static createAuthHeader(claims: AccessClaims, jwt_options?: jwt.SignOptions): string;
+    static createRefreshHeader(owner: string, jwt_options?: jwt.SignOptions): string;
+    static make(header_or_marshalled_claims: string, authenticate_immediately?: boolean): Authorizer;
+    constructor(authorizationHeader: string);
+    /**
+     *
+     * @param {jwt.SignOptions} new_jwt_options
+     * @note I don't really like this, but without the true auth server, this is required
+     * to be able to effectively continuously authorize long-lived subscriptions.
+     */
+    extend(new_jwt_options?: jwt.SignOptions): void;
+    isExpired(): boolean;
+    marshalClaims(): string;
+    authenticate(): void;
     getUser(): string;
-    getRoles(): RolesAndIdentifiers;
-    getClient(): string | undefined;
-    getOwner(): string | undefined;
-    getAuthorizationHeader(): string;
-    getClaims(): Claims;
     /**
      * Type-GraphQL compatible method that singularly answers the question:
      * "Given the accessToken that this Authorizer represents:
@@ -62,4 +70,3 @@ export declare class Authorizer {
     }): string[];
     inScope(...scopeOrScopeArray: Array<Scopes | Scopes[]>): boolean;
 }
-export {};
