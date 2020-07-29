@@ -1,10 +1,18 @@
-import { RefreshClaims } from './../lib/types.d';
 import * as jwt from 'jsonwebtoken';
 import { Oid } from '@rumbleship/oid';
 import { OneToUniqueManyMap } from './utils/one-to-unique-many-map';
 import { InvalidJWTError } from './errors';
 import { Permissions, ResourceAsScopesSingleton } from './permissions-matrix';
-import { Claims, Scopes, Actions, Roles, Resource, AccessClaims, GrantTypes } from './types';
+import {
+  Claims,
+  Scopes,
+  Actions,
+  Roles,
+  Resource,
+  AccessClaims,
+  RefreshClaims,
+  GrantTypes
+} from './types';
 import { getArrayFromOverloadedRest } from './helpers';
 import { Requires, Required } from './required.decorator';
 import { AuthorizerTreatAsMap, getAuthorizerTreatAs } from './authorizer-treat-as.directive';
