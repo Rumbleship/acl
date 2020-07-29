@@ -4,7 +4,23 @@ import * as tk from 'timekeeper';
 import * as jwt from 'jsonwebtoken';
 import { Authorizer } from './../../src/authorizer';
 import { baseRoles } from './../../src/helpers';
-const SECRET = 'signingsecret';
+import { MockConfig } from './../mock-config';
+
+Authorizer.initialize(MockConfig);
+
+describe('Given: an initialized Authorizer', () => {
+  test.each(['AccessToken', 'ServiceUser'])('Then: `config.%s` is cloned', config_key => {
+    expect(
+      // tslint:disable-next-line: triple-equals
+      Reflect.get(Reflect.get(Authorizer, 'config'), config_key) ==
+        Reflect.get(MockConfig, config_key)
+    ).toBe(false);
+    expect(Reflect.get(Reflect.get(Authorizer, 'config'), config_key)).toStrictEqual(
+      Reflect.get(MockConfig, config_key)
+    );
+  });
+});
+
 describe('An Authorizer only accepts a properly formatted `Bearer {{jwt.claims.here}}', () => {
   test.each([
     'bearer jwt.claims.here',
@@ -16,14 +32,11 @@ describe('An Authorizer only accepts a properly formatted `Bearer {{jwt.claims.h
   ])(
     'Constructing an Authorizer with an invalid auth header: %s throws',
     (badAuthHeader: string) => {
-      expect(() => new Authorizer(badAuthHeader, SECRET)).toThrow(InvalidJWTError);
+      expect(() => new Authorizer(badAuthHeader)).toThrow(InvalidJWTError);
     }
   );
   test('Constructing an authorizer with a valid header `Bearer jwt.claims.here` succeeds', () => {
-    expect(new Authorizer('Bearer jwt.claims.here', SECRET)).toBeTruthy();
-  });
-  test('Constructing an Authorizer without a secret throws', () => {
-    expect(() => new Authorizer('Bearer jwt.claims.here', '')).toThrow();
+    expect(new Authorizer('Bearer jwt.claims.here')).toBeTruthy();
   });
 });
 
@@ -40,8 +53,8 @@ describe('`authenticate()` throws IFF jwt is expired', () => {
       let authorizer: Authorizer;
       beforeAll(() => {
         const roles = baseRoles();
-        const accessToken = jwt.sign({ roles }, SECRET);
-        authorizer = new Authorizer(`Bearer ${accessToken}`, SECRET);
+        const accessToken = jwt.sign({ roles }, MockConfig.AccessToken.secret);
+        authorizer = new Authorizer(`Bearer ${accessToken}`);
       });
       describe('When: authenticating the authorizer', () => {
         test('Then: authorizer.authenticate() should return true', () => {
@@ -57,10 +70,10 @@ describe('`authenticate()` throws IFF jwt is expired', () => {
         tenSecondsAgo = moment(now).subtract(10, 'seconds');
         tk.travel(tenSecondsAgo.toDate());
         const roles = baseRoles();
-        const accessToken = jwt.sign({ roles }, SECRET, {
+        const accessToken = jwt.sign({ roles }, MockConfig.AccessToken.secret, {
           expiresIn: '2sec'
         });
-        authorizer = new Authorizer(`Bearer ${accessToken}`, SECRET);
+        authorizer = new Authorizer(`Bearer ${accessToken}`);
         tk.travel(now);
       });
       describe('When: authenticating the authorizer', () => {

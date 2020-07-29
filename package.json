@@ -18,6 +18,7 @@
     "coverage": "NODE_PATH=. tsc -p ./tsconfig-build.json && NODE_PATH=. jest --coverage --coverageReporters=text-lcov | coveralls"
   },
   "devDependencies": {
+    "@rumbleship/config": "git+ssh://git@github.com/rumbleship/config#1.0.2",
     "@rumbleship/oid": "git+ssh://git@github.com/rumbleship/oid.git#4.0.2",
     "@types/jest": "^24.0.6",
     "@types/jsonwebtoken": "^8.3.2",
@@ -47,6 +48,7 @@
     "testEnvironment": "node"
   },
   "peerDependencies": {
+    "@rumbleship/config": "git+ssh://git@github.com/rumbleship/config#1.0.2",
     "@rumbleship/oid": "git+ssh://git@github.com/rumbleship/oid.git#4.0.2",
     "jsonwebtoken": "^8.5.1",
     "reflect-metadata": "^0.1.13"

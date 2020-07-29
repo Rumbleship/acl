@@ -1,17 +1,37 @@
+import { RefreshClaims } from './../lib/types.d';
 import * as jwt from 'jsonwebtoken';
 import { Oid } from '@rumbleship/oid';
 import { OneToUniqueManyMap } from './utils/one-to-unique-many-map';
 import { InvalidJWTError } from './errors';
 import { Permissions, ResourceAsScopesSingleton } from './permissions-matrix';
-import { Claims, Scopes, Actions, Roles, Resource } from './types';
+import { Claims, Scopes, Actions, Roles, Resource, AccessClaims, GrantTypes } from './types';
 import { getArrayFromOverloadedRest } from './helpers';
 import { Requires, Required } from './required.decorator';
 import { AuthorizerTreatAsMap, getAuthorizerTreatAs } from './authorizer-treat-as.directive';
+import { ISharedSchema, IServiceUserConfig, IAccessTokenConfig } from '@rumbleship/config';
 const BEARER_TOKEN_REGEX = /^Bearer [A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/;
 
 class RolesAndIdentifiers extends OneToUniqueManyMap<Roles, string> {}
 
 export class Authorizer {
+  private static _initialized: boolean = false;
+  private static _ServiceUser: IServiceUserConfig;
+  private static _AccessToken: IAccessTokenConfig;
+  protected static get config(): Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'> {
+    if (!this._initialized) {
+      throw new Error('Must initialize Authorizer');
+    }
+    return {
+      AccessToken: this._AccessToken,
+      ServiceUser: this._ServiceUser
+    };
+  }
+  get roles(): RolesAndIdentifiers {
+    return this._roles || new RolesAndIdentifiers();
+  }
+  set roles(v: RolesAndIdentifiers) {
+    this._roles = v;
+  }
   private accessToken: string;
   private user?: string; // oid.
   private client?: string;
@@ -19,13 +39,33 @@ export class Authorizer {
   private owner?: string;
   private _roles?: RolesAndIdentifiers;
 
-  get roles(): RolesAndIdentifiers {
-    return this._roles || new RolesAndIdentifiers();
+  static initialize(config: Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'>) {
+    this._AccessToken = { ...config.AccessToken };
+    this._ServiceUser = { ...config.ServiceUser };
+    this._initialized = true;
   }
-  set roles(v: RolesAndIdentifiers) {
-    this._roles = v;
+  static createAuthHeader(claims: AccessClaims, jwt_options?: object) {
+    if (!claims.user) {
+      if (!claims.scopes.includes(Scopes.SYSADMIN)) {
+        claims.user = this.config.ServiceUser.id;
+      }
+    }
+    const access_token = jwt.sign(claims, this.config.AccessToken.secret, jwt_options);
+    return `Bearer ${access_token}`;
   }
-  constructor(private authorizationHeader: string, private secret: string) {
+
+  static createRefreshHeader(owner: string, jwt_options: object = { expiresIn: '9h' }) {
+    const claims: RefreshClaims = {
+      owner,
+      grant_type: GrantTypes.REFRESH
+    };
+    return jwt.sign(claims, this.config.AccessToken.secret, jwt_options);
+  }
+
+  constructor(private authorizationHeader: string) {
+    if (!Authorizer._initialized) {
+      throw new Error('Must initialize Authorizer');
+    }
     if (!this.authorizationHeader) {
       throw new InvalidJWTError('`authorizationHeader` is required by Authorizer');
     }
@@ -36,10 +76,14 @@ export class Authorizer {
     }
 
     this.accessToken = this.authorizationHeader.split(' ')[1];
+  }
 
-    if (!this.secret) {
-      throw new Error('`secret` is required by Authorizer');
-    }
+  refresh() {
+    // stub
+  }
+
+  extend(extend_time: number) {
+    // add extend_time ms to current
   }
 
   @Required()
@@ -54,7 +98,10 @@ export class Authorizer {
       }
     }
     // client and owner are deprecated
-    const { client, owner } = jwt.verify(this.accessToken, this.secret) as Claims;
+    const { client, owner } = jwt.verify(
+      this.accessToken,
+      Authorizer.config.AccessToken.secret
+    ) as Claims;
     this.client = client;
     this.owner = owner;
     return !!roles;
@@ -86,7 +133,7 @@ export class Authorizer {
   }
   // I think this is leftover cruft? Would like to remove.
   getClaims(): Claims {
-    return jwt.verify(this.accessToken, this.secret) as Claims;
+    return jwt.verify(this.accessToken, Authorizer.config.AccessToken.secret) as Claims;
   }
 
   /**
