@@ -26,25 +26,32 @@ export class Authorizer {
       ServiceUser: this._ServiceUser
     };
   }
-  get roles(): RolesAndIdentifiers {
-    return this._roles || new RolesAndIdentifiers();
-  }
-  set roles(v: RolesAndIdentifiers) {
-    this._roles = v;
-  }
   private accessToken: string;
-  private user?: string; // oid.
-  private client?: string;
-  private scopes?: Scopes[] = [];
-  private owner?: string;
-  private _roles?: RolesAndIdentifiers;
+  private roles: RolesAndIdentifiers = new RolesAndIdentifiers();
+  private get user(): string {
+    return this._claims?.user as string;
+  }
+  private get scopes(): Scopes[] {
+    return this._claims?.scopes ?? [];
+  }
+
+  private _claims?: Claims;
+  private get claims(): Claims {
+    if (!this._claims) {
+      throw new Error('Authorizer must be authenticated');
+    }
+    return this._claims;
+  }
 
   static initialize(config: Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'>) {
     this._AccessToken = { ...config.AccessToken };
     this._ServiceUser = { ...config.ServiceUser };
     this._initialized = true;
   }
-  static createAuthHeader(claims: AccessClaims, jwt_options?: object) {
+  static createAuthHeader(
+    claims: AccessClaims,
+    jwt_options: jwt.SignOptions = { expiresIn: '9h' }
+  ) {
     if (!claims.user) {
       if (!claims.scopes.includes(Scopes.SYSADMIN)) {
         claims.user = this.config.ServiceUser.id;
@@ -54,12 +61,34 @@ export class Authorizer {
     return `Bearer ${access_token}`;
   }
 
-  static createRefreshHeader(owner: string, jwt_options: object = { expiresIn: '9h' }) {
+  static createRefreshHeader(owner: string, jwt_options: jwt.SignOptions = { expiresIn: '9h' }) {
     const claims: RefreshClaims = {
       owner,
       grant_type: GrantTypes.REFRESH
     };
     return jwt.sign(claims, this.config.AccessToken.secret, jwt_options);
+  }
+
+  static make(
+    header_or_marshalled_claims: string,
+    authenticate_immediately: boolean = false
+  ): Authorizer {
+    if (!Authorizer._initialized) {
+      throw new Error('Must initialize Authorizer');
+    }
+    const authorizer = (() => {
+      if (header_or_marshalled_claims?.match(BEARER_TOKEN_REGEX)) {
+        return new Authorizer(header_or_marshalled_claims);
+      }
+      const hydrated_claims: Claims = JSON.parse(
+        new Buffer(header_or_marshalled_claims, 'base64').toString('ascii')
+      );
+      return new Authorizer(Authorizer.createAuthHeader(hydrated_claims));
+    })();
+    if (authenticate_immediately) {
+      authorizer.authenticate();
+    }
+    return authorizer;
   }
 
   constructor(private authorizationHeader: string) {
@@ -78,62 +107,57 @@ export class Authorizer {
     this.accessToken = this.authorizationHeader.split(' ')[1];
   }
 
-  refresh() {
-    // stub
+  // To come...get new claims, or something?
+  // refresh() {
+  //   // stub
+  // }
+
+  /**
+   *
+   * @param {jwt.SignOptions} new_jwt_options
+   * @note I don't really like this, but without the true auth server, this is required
+   * to be able to effectively continuously authorize long-lived subscriptions.
+   */
+  extend(new_jwt_options: jwt.SignOptions = { expiresIn: '9h' }) {
+    const claims_clone = { ...this.claims };
+    delete claims_clone.iat;
+    delete claims_clone.exp;
+    this.accessToken = Authorizer.createAuthHeader(claims_clone, new_jwt_options).split(' ')[1];
+    this.authenticate();
   }
 
-  extend(extend_time: number) {
-    // add extend_time ms to current
+  isExpired(): boolean {
+    try {
+      jwt.verify(this.accessToken, Authorizer.config.AccessToken.secret);
+      return false;
+    } catch (error) {
+      if (error instanceof jwt.TokenExpiredError) {
+        return true;
+      }
+      throw error;
+    }
+  }
+
+  marshalClaims(): string {
+    const claims = this.claims;
+    delete claims.iat;
+    delete claims.exp;
+    return new Buffer(JSON.stringify(claims)).toString('base64');
   }
 
   @Required()
-  authenticate(): boolean {
-    const { user, scopes, roles } = jwt.decode(this.accessToken) as Claims;
-    this.user = user;
-    this.scopes = scopes;
-    this.roles = new RolesAndIdentifiers();
-    for (const [role, group] of Object.entries(roles || {})) {
+  authenticate(): void {
+    this._claims = jwt.verify(this.accessToken, Authorizer.config.AccessToken.secret) as Claims;
+    for (const [role, group] of Object.entries(this._claims.roles || {})) {
       if (group) {
         this.roles.add(role as Roles, group);
       }
     }
-    // client and owner are deprecated
-    const { client, owner } = jwt.verify(
-      this.accessToken,
-      Authorizer.config.AccessToken.secret
-    ) as Claims;
-    this.client = client;
-    this.owner = owner;
-    return !!roles;
   }
 
   @Requires('authenticate')
   getUser(): string {
     return this.user as string;
-  }
-
-  @Requires('authenticate')
-  getRoles() {
-    return this.roles;
-  }
-
-  @Requires('authenticate')
-  getClient(): string | undefined {
-    return this.client;
-  }
-  @Requires('authenticate')
-  getOwner(): string | undefined {
-    // this really should return an unwrappable Oid...
-    return this.owner;
-  }
-
-  @Requires('authenticate')
-  getAuthorizationHeader(): string {
-    return this.authorizationHeader;
-  }
-  // I think this is leftover cruft? Would like to remove.
-  getClaims(): Claims {
-    return jwt.verify(this.accessToken, Authorizer.config.AccessToken.secret) as Claims;
   }
 
   /**

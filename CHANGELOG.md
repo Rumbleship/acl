@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
     * peer dependency on `@rumbleship/config` for type interfaces
 ### Removed
   * `createAuthHeader()` and `createRefreshHeader` in favor of static methods: `Authorizer.createAuthHeader()` and `Authorizer.createRefreshHeader()`
+  * deprecated methods; getRoles, getClient
 ### Changed
 ### Fixed
   * launch.json boilerplate for new debugger

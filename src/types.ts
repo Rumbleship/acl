@@ -56,8 +56,8 @@ export interface RefreshClaims {
   grant_type: GrantTypes;
 }
 export interface Claims extends AccessClaims, RefreshClaims {
-  exp: Date;
-  iat: Date;
+  exp: number; // seconds since the epoch
+  iat: number; // seconds since the epoch
 }
 
 export interface ResourceAttributeAsMapConstructor extends Array<Resource | string[]> {

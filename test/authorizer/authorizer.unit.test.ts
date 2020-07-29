@@ -1,3 +1,5 @@
+import { AccessClaims } from './../../lib/types.d';
+import { Roles, Scopes, Claims } from './../../src/types';
 import { InvalidJWTError } from './../../src/errors';
 import moment = require('moment');
 import * as tk from 'timekeeper';
@@ -36,11 +38,11 @@ describe('An Authorizer only accepts a properly formatted `Bearer {{jwt.claims.h
     }
   );
   test('Constructing an authorizer with a valid header `Bearer jwt.claims.here` succeeds', () => {
-    expect(new Authorizer('Bearer jwt.claims.here')).toBeTruthy();
+    expect(() => new Authorizer('Bearer jwt.claims.here')).not.toThrow();
   });
 });
 
-describe('`authenticate()` throws IFF jwt is expired', () => {
+describe('Checking if an authorizer is expired', () => {
   describe('Given: time is frozen at X', () => {
     const now = new Date();
     beforeAll(() => {
@@ -56,10 +58,12 @@ describe('`authenticate()` throws IFF jwt is expired', () => {
         const accessToken = jwt.sign({ roles }, MockConfig.AccessToken.secret);
         authorizer = new Authorizer(`Bearer ${accessToken}`);
       });
-      describe('When: authenticating the authorizer', () => {
-        test('Then: authorizer.authenticate() should return true', () => {
+      describe('When: checking expiredness', () => {
+        test('Then: authorizer.authenticate() should not throw', () => {
           expect(() => authorizer.authenticate()).not.toThrow();
-          expect(authorizer.authenticate()).toBe(true);
+        });
+        test('Then: authorizer.isExpired() is false', () => {
+          expect(authorizer.isExpired()).toBe(false);
         });
       });
     });
@@ -76,11 +80,119 @@ describe('`authenticate()` throws IFF jwt is expired', () => {
         authorizer = new Authorizer(`Bearer ${accessToken}`);
         tk.travel(now);
       });
-      describe('When: authenticating the authorizer', () => {
+      describe('When: checking expiredness', () => {
         test('Then: authorizer.authenticate() should throw', () => {
           expect(() => authorizer.authenticate()).toThrow();
+        });
+        test('Then: authorizer.isExpired() returns true', () => {
+          expect(authorizer.isExpired()).toEqual(true);
         });
       });
     });
   });
 });
+
+describe('Feature: Marshaling an Authorizer', () => {
+  const id = 'u_12345';
+  const claims: AccessClaims = {
+    user: id,
+    roles: {
+      [Roles.ADMIN]: [id],
+      [Roles.USER]: [],
+      [Roles.PENDING]: []
+    },
+    scopes: [Scopes.USER]
+  };
+  const authHeader = Authorizer.createAuthHeader(claims);
+  const authorizer = new Authorizer(authHeader);
+  authorizer.authenticate();
+  describe('When: extracting the marshaled string', () => {
+    test('Then: a base64 encoded string is returned', () => {
+      const marshalled = authorizer.marshalClaims();
+      expect(typeof marshalled).toBe('string');
+      expect(JSON.parse(new Buffer(marshalled, 'base64').toString('ascii'))).toStrictEqual(claims);
+    });
+    test.each(['iat', 'exp'])(
+      'Then: the marshalled claims do not contain the lib-generated `%s` val',
+      deleted_claim => {
+        const marshalled = authorizer.marshalClaims();
+        const hydrated = JSON.parse(new Buffer(marshalled, 'base64').toString('ascii'));
+        expect(Object.keys(hydrated).includes(deleted_claim)).toBe(false);
+      }
+    );
+  });
+
+  describe('When: making an authorizer from marshaled string', () => {
+    test('Then: an authorizer with default expriry is returned', () => {
+      const marshalled = authorizer.marshalClaims();
+      const the_future = moment()
+        .add(5, 'days')
+        .milliseconds(0);
+      tk.freeze(the_future.toDate());
+      const hydrated = Authorizer.make(marshalled);
+      hydrated.authenticate();
+      const cloned_original_claims = { ...claims };
+
+      const hydrated_claims: Claims = Reflect.get(hydrated, 'claims');
+      const { iat: hydrated_iat, exp: hydrated_exp } = hydrated_claims;
+      delete hydrated_claims.iat;
+      delete hydrated_claims.exp;
+      expect(new Date(hydrated_iat * 1000)).toEqual(the_future.toDate());
+      expect(new Date(hydrated_exp * 1000)).toEqual(the_future.add(9, 'hours').toDate());
+
+      expect(hydrated_claims).toStrictEqual(cloned_original_claims);
+      tk.reset();
+    });
+  });
+});
+
+describe('An authorizer can extend its access token', () => {
+  const now = new Date();
+  const id = 'u_12345';
+  const claims: AccessClaims = {
+    user: id,
+    roles: {
+      [Roles.ADMIN]: [id],
+      [Roles.USER]: [],
+      [Roles.PENDING]: []
+    },
+    scopes: [Scopes.USER]
+  };
+
+  describe('Given: time frozen at X', () => {
+    const authHeader = Authorizer.createAuthHeader(claims, { expiresIn: '5m' });
+    let authorizer: Authorizer;
+    beforeAll(() => {
+      tk.freeze(now);
+      authorizer = new Authorizer(authHeader);
+      authorizer.authenticate();
+    });
+    describe('When: extending the validity of the authorizer', () => {
+      beforeAll(() => {
+        authorizer.extend();
+      });
+      test('Then: `exp` on the authorizers claims is extended', () => {
+        const extended_claims: Claims = Reflect.get(authorizer, 'claims');
+        expect(new Date(extended_claims.exp * 1000)).toEqual(
+          moment(now)
+            .milliseconds(0)
+            .add(9, 'h')
+            .toDate()
+        );
+      });
+      test('Then: `iat` on the authorizers claims is the frozen time', () => {
+        const extended_claims: Claims = Reflect.get(authorizer, 'claims');
+        expect(new Date(extended_claims.iat * 1000)).toEqual(
+          moment(now)
+            .milliseconds(0)
+            .toDate()
+        );
+      });
+    });
+
+    afterAll(() => {
+      tk.reset();
+    });
+  });
+});
+
