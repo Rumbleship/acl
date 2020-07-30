@@ -109,13 +109,13 @@ describe('Feature: Marshaling an Authorizer', () => {
     test('Then: a base64 encoded string is returned', () => {
       const marshalled = authorizer.marshalClaims();
       expect(typeof marshalled).toBe('string');
-      expect(JSON.parse(new Buffer(marshalled, 'base64').toString('ascii'))).toStrictEqual(claims);
+      expect(JSON.parse(Buffer.from(marshalled, 'base64').toString('ascii'))).toStrictEqual(claims);
     });
     test.each(['iat', 'exp'])(
       'Then: the marshalled claims do not contain the lib-generated `%s` val',
       deleted_claim => {
         const marshalled = authorizer.marshalClaims();
-        const hydrated = JSON.parse(new Buffer(marshalled, 'base64').toString('ascii'));
+        const hydrated = JSON.parse(Buffer.from(marshalled, 'base64').toString('ascii'));
         expect(Object.keys(hydrated).includes(deleted_claim)).toBe(false);
       }
     );

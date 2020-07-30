@@ -105,7 +105,7 @@ export class Authorizer {
         return new Authorizer(header_or_marshalled_claims);
       }
       const hydrated_claims: Claims = JSON.parse(
-        new Buffer(header_or_marshalled_claims, 'base64').toString('ascii')
+        Buffer.from(header_or_marshalled_claims, 'base64').toString('ascii')
       );
       return new Authorizer(Authorizer.createAuthHeader(hydrated_claims));
     })();
@@ -166,7 +166,7 @@ export class Authorizer {
     const claims = { ...this.claims };
     delete claims.iat;
     delete claims.exp;
-    return new Buffer(JSON.stringify(claims)).toString('base64');
+    return Buffer.from(JSON.stringify(claims)).toString('base64');
   }
 
   @Required()
