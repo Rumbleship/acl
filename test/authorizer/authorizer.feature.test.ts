@@ -1,58 +1,46 @@
+import { AccessClaims } from './../../lib/types.d';
 import { Authorizer } from './../../src/authorizer';
 import { Permissions } from './../../src/permissions-matrix';
 import { Roles, Resource, Scopes, Actions } from './../../src/types';
-import { createAuthHeader } from './../../src/helpers';
 import { AuthorizerTreatAs } from './../../src/authorizer-treat-as.directive';
+import { MockConfig } from './../mock-config';
 import { Oid } from '@rumbleship/oid';
 
-const SECRET = 'signingsecret';
+Authorizer.initialize(MockConfig);
 
 const user_id = Oid.create('User', 1).oid;
 const another_user_id = Oid.create('User', 2).oid;
 const buyer_id = Oid.create('Buyer', 1).oid;
 const supplier_id = Oid.create('Supplier', 2).oid;
 
-const adminOfUserIdHeader = createAuthHeader(
-  {
-    user: user_id,
-    roles: {
-      [Roles.ADMIN]: [user_id]
-    },
-    scopes: []
+const adminOfUserIdHeader = Authorizer.createAuthHeader({
+  user: user_id,
+  roles: {
+    [Roles.ADMIN]: [user_id]
   },
-  SECRET
-);
-const adminOfAnotherUserIdHeader = createAuthHeader(
-  {
-    user: user_id,
-    roles: {
-      [Roles.ADMIN]: [user_id, another_user_id]
-    },
-    scopes: []
+  scopes: [Scopes.USER]
+});
+const adminOfAnotherUserIdHeader = Authorizer.createAuthHeader({
+  user: user_id,
+  roles: {
+    [Roles.ADMIN]: [user_id, another_user_id]
   },
-  SECRET
-);
-const userOfUserIdHeader = createAuthHeader(
-  {
-    user: user_id,
-    roles: {
-      [Roles.USER]: [user_id]
-    },
-    scopes: []
+  scopes: [Scopes.USER]
+});
+const userOfUserIdHeader = Authorizer.createAuthHeader({
+  user: user_id,
+  roles: {
+    [Roles.USER]: [user_id]
   },
-  SECRET
-);
-
-const adminOfBuyerIdHeader = createAuthHeader(
-  {
-    user: user_id,
-    roles: {
-      [Roles.ADMIN]: [buyer_id]
-    },
-    scopes: []
+  scopes: [Scopes.USER]
+});
+const adminOfBuyerIdHeader = Authorizer.createAuthHeader({
+  user: user_id,
+  roles: {
+    [Roles.ADMIN]: [buyer_id]
   },
-  SECRET
-);
+  scopes: [Scopes.USER]
+});
 
 describe('Working with an explicitly listed Action', () => {
   describe('Scenario: matching on default attribute:id || reflexive self-permissioning of core Authorizables (User|Division)', () => {
@@ -65,7 +53,7 @@ describe('Working with an explicitly listed Action', () => {
       });
 
       describe(`And: an authorizer wrapping a JWT that represents a {Role:Admin of instance: ${user_id}}`, () => {
-        const authorizer = new Authorizer(adminOfUserIdHeader, SECRET);
+        const authorizer = new Authorizer(adminOfUserIdHeader);
         authorizer.authenticate();
         class Authorizable {
           constructor(public id: string) {}
@@ -84,7 +72,7 @@ describe('Working with an explicitly listed Action', () => {
         });
       });
       describe(`And: an authorizer wrapping a JWT that represents a {Role:User of instance: ${user_id}}`, () => {
-        const authorizer = new Authorizer(userOfUserIdHeader, SECRET);
+        const authorizer = new Authorizer(userOfUserIdHeader);
         authorizer.authenticate();
         class Authorizable {
           constructor(public id: string) {}
@@ -114,7 +102,7 @@ describe('Working with an explicitly listed Action', () => {
         to: [Actions.DELETE]
       });
       describe(`And: an authorizer wrapping a JWT that represents a {Role:Admin of instance: ${buyer_id}}`, () => {
-        const authorizer = new Authorizer(adminOfBuyerIdHeader, SECRET);
+        const authorizer = new Authorizer(adminOfBuyerIdHeader);
         authorizer.authenticate();
         class Authorizable {
           constructor(public division_id: string) {}
@@ -133,7 +121,7 @@ describe('Working with an explicitly listed Action', () => {
         });
       });
       describe(`And: an authorizer wrapping a JWT that represents a {Role:User of instance: ${buyer_id}}`, () => {
-        const authorizer = new Authorizer(userOfUserIdHeader, SECRET);
+        const authorizer = new Authorizer(userOfUserIdHeader);
         authorizer.authenticate();
         class Authorizable {
           constructor(public id: string) {}
@@ -171,7 +159,7 @@ describe('Working with an explicitly listed Action', () => {
         to: [Actions.DELETE]
       });
       describe(`And: an authorizer wrapping a JWT that represents a {Role:Admin of instance: ${buyer_id}}`, () => {
-        const authorizer = new Authorizer(adminOfBuyerIdHeader, SECRET);
+        const authorizer = new Authorizer(adminOfBuyerIdHeader);
         authorizer.authenticate();
 
         describe(`When: checking if 'Action:delete' is allowed on an Authorizable instance whose 'buyer_id' attribute DOES NOT MATCH:${buyer_id}`, () => {
@@ -188,7 +176,7 @@ describe('Working with an explicitly listed Action', () => {
         });
       });
       describe(`And: an authorizer wrapping a JWT that represents a {Role:User of instance: ${buyer_id}}`, () => {
-        const authorizer = new Authorizer(userOfUserIdHeader, SECRET);
+        const authorizer = new Authorizer(userOfUserIdHeader);
         authorizer.authenticate();
         describe(`When: checking if 'Action:delete' is allowed on an Authorizable instance whose 'buyer_id' attribute DOES NOT MATCH:${buyer_id}`, () => {
           const noMatchOnId = new Authorizable('b_foobar', 's_09aoeud');
@@ -218,7 +206,7 @@ describe('Working with an unlisted action', () => {
       });
 
       describe(`And: an authorizer wrapping a JWT that represents a {Role:Admin of instance: ${user_id}}`, () => {
-        const authorizer = new Authorizer(adminOfUserIdHeader, SECRET);
+        const authorizer = new Authorizer(adminOfUserIdHeader);
         authorizer.authenticate();
         class Authorizable {
           constructor(public id: string) {}
@@ -237,7 +225,7 @@ describe('Working with an unlisted action', () => {
         });
       });
       describe(`And: an authorizer wrapping a JWT that represents a {Role:User of instance: ${user_id}}`, () => {
-        const authorizer = new Authorizer(userOfUserIdHeader, SECRET);
+        const authorizer = new Authorizer(userOfUserIdHeader);
         authorizer.authenticate();
         class Authorizable {
           constructor(public id: string) {}
@@ -280,7 +268,7 @@ describe('Feature: a user can ask an authorizer for a list of ids that have perm
       to: [Actions.READ]
     });
     describe(`And: a JWT that represents a {role:Admin of instance: ${user_id}}`, () => {
-      const authorizer = new Authorizer(adminOfUserIdHeader, SECRET);
+      const authorizer = new Authorizer(adminOfUserIdHeader);
       authorizer.authenticate();
       describe('When: asking for ids that can perform an allowed action: DELETE', () => {
         test(`Then: the known id ${user_id} is returned`, () => {
@@ -298,7 +286,7 @@ describe('Feature: a user can ask an authorizer for a list of ids that have perm
       });
     });
     describe(`And: a JWT that represents a {role:Admin of instance: ${another_user_id}}`, () => {
-      const authorizer = new Authorizer(adminOfAnotherUserIdHeader, SECRET);
+      const authorizer = new Authorizer(adminOfAnotherUserIdHeader);
       authorizer.authenticate();
       describe('When: asking for ids that can perform an allowed action: DELETE', () => {
         const ids = authorizer.identifiersThatCan({
@@ -329,18 +317,14 @@ describe('Feature: a user can ask an authorizer for a list of ids that have perm
          role:Admin of instance: ${buyer_id},
          role:User of instance: ${supplier_id} }`, () => {
       const authorizer = new Authorizer(
-        createAuthHeader(
-          {
-            user: user_id,
-            roles: {
-              [Roles.ADMIN]: [another_user_id, buyer_id],
-              [Roles.USER]: [supplier_id]
-            },
-            scopes: []
+        Authorizer.createAuthHeader({
+          user: user_id,
+          roles: {
+            [Roles.ADMIN]: [another_user_id, buyer_id],
+            [Roles.USER]: [supplier_id]
           },
-          SECRET
-        ),
-        SECRET
+          scopes: [Scopes.USER]
+        })
       );
       authorizer.authenticate();
       describe(`When: asking for ids that can perform an action: DELETE`, () => {
@@ -381,18 +365,14 @@ describe('Feature: a user can ask an authorizer for a list of ids that have perm
         role:User of User instance: ${another_user_id}
       },`, () => {
       const authorizer = new Authorizer(
-        createAuthHeader(
-          {
-            user: user_id,
-            roles: {
-              [Roles.ADMIN]: [buyer_id],
-              [Roles.USER]: [another_user_id]
-            },
-            scopes: []
+        Authorizer.createAuthHeader({
+          user: user_id,
+          roles: {
+            [Roles.ADMIN]: [buyer_id],
+            [Roles.USER]: [another_user_id]
           },
-          SECRET
-        ),
-        SECRET
+          scopes: [Scopes.USER]
+        })
       );
       authorizer.authenticate();
       describe('When: asking for ids that can READ, unfiltered', () => {
@@ -486,25 +466,22 @@ describe('Feature: a user can ask an authorizer for a list of ids that have perm
 describe('Feature: methods throw if the authorizer has not yet been authenticated', () => {
   describe('Given: two authorizers, one authenticated, one not, exist', () => {
     const id = 'b_abcde';
-    const authHeader = createAuthHeader(
-      {
-        roles: {
-          [Roles.ADMIN]: [id],
-          [Roles.USER]: [],
-          [Roles.PENDING]: []
-        },
-        user: 'u_abcde',
-        client: 'here for good measure',
-        scopes: [Scopes.BANKINGADMIN]
+    const authHeader = Authorizer.createAuthHeader({
+      roles: {
+        [Roles.ADMIN]: [id],
+        [Roles.USER]: [],
+        [Roles.PENDING]: []
       },
-      SECRET
-    );
-    const unauthenticated = new Authorizer(authHeader, SECRET);
-    const authenticated = new Authorizer(authHeader, SECRET);
+      user: 'u_abcde',
+      client: 'here for good measure',
+      scopes: [Scopes.BANKINGADMIN]
+    });
+    const unauthenticated = new Authorizer(authHeader);
+    const authenticated = new Authorizer(authHeader);
     beforeAll(() => {
       authenticated.authenticate();
     });
-    describe.each(['getUser', 'getRoles', 'getClient', 'inScope'])(
+    describe.each(['getUser', 'inScope'])(
       'When: invoking %s on the unauthenticated authorizer',
       methodName => {
         test('Then: an error is thrown', () => {
@@ -512,7 +489,7 @@ describe('Feature: methods throw if the authorizer has not yet been authenticate
         });
       }
     );
-    describe.each(['getUser', 'getRoles', 'getClient', 'inScope'])(
+    describe.each(['getUser', 'inScope'])(
       'When: invoking %s on the authenticated authorizer',
       methodName => {
         test('Then: no error is thrown', () => {
@@ -529,19 +506,17 @@ describe('Feature: methods throw if the authorizer has not yet been authenticate
 
 describe('Feature: `inScope()` always returns true for a system administrator', () => {
   describe('Given: A user with an authHeader that contains SYSADMIN scope', () => {
-    const id = 'u_12345';
-    const authHeader = createAuthHeader(
-      {
-        roles: {
-          [Roles.ADMIN]: [id],
-          [Roles.USER]: [],
-          [Roles.PENDING]: []
-        },
-        scopes: [Scopes.SYSADMIN]
+    const user = Oid.create('User', 1).toString();
+    const authHeader = Authorizer.createAuthHeader({
+      roles: {
+        [Roles.ADMIN]: [user],
+        [Roles.USER]: [],
+        [Roles.PENDING]: []
       },
-      SECRET
-    );
-    const authorizer = new Authorizer(authHeader, SECRET);
+      scopes: [Scopes.SYSADMIN],
+      user
+    });
+    const authorizer = new Authorizer(authHeader);
     authorizer.authenticate();
     describe('When: asking for a more specific scope, e.g. BANKINGADMIN', () => {
       test('Then: `inScope()` returns true', () => {
@@ -551,19 +526,17 @@ describe('Feature: `inScope()` always returns true for a system administrator', 
   });
 });
 describe('Feature: `inScope()` accepts an array or a single scope', () => {
-  const id = 'u_12345';
-  const authHeader = createAuthHeader(
-    {
-      roles: {
-        [Roles.ADMIN]: [id],
-        [Roles.USER]: [],
-        [Roles.PENDING]: []
-      },
-      scopes: [Scopes.BANKINGADMIN]
+  const user = Oid.Create('User', 72).toString();
+  const authHeader = Authorizer.createAuthHeader({
+    user,
+    roles: {
+      [Roles.ADMIN]: [user],
+      [Roles.USER]: [],
+      [Roles.PENDING]: []
     },
-    SECRET
-  );
-  const authorizer = new Authorizer(authHeader, SECRET);
+    scopes: [Scopes.BANKINGADMIN]
+  });
+  const authorizer = new Authorizer(authHeader);
   authorizer.authenticate();
   describe('When querying inScope with a single parameter', () => {
     test('Then: a missing scope fails', () => {
@@ -579,6 +552,66 @@ describe('Feature: `inScope()` accepts an array or a single scope', () => {
     });
     test('Then: a present scope passes', () => {
       expect(authorizer.inScope([Scopes.BANKINGADMIN])).toBe(true);
+    });
+  });
+});
+
+describe('Feature: automatic assignment of ServiceUser', () => {
+  describe('When: creating an auth header that includes SYSADMIN scope', () => {
+    const claims: AccessClaims = {
+      roles: {
+        [Roles.ADMIN]: [],
+        [Roles.USER]: [],
+        [Roles.PENDING]: []
+      },
+      scopes: [Scopes.SYSADMIN],
+      user: MockConfig.ServiceUser.id
+    };
+    describe('And: there is no user claim', () => {
+      test('Then: the ServiceUser is assigned', () => {
+        const header = Authorizer.createAuthHeader({ ...claims });
+        const authorizer = Authorizer.make(header, true);
+        expect(authorizer.getUser()).toBe(MockConfig.ServiceUser.id);
+      });
+    });
+    describe('And: a user claim is present', () => {
+      test('Then: the specified user is respected', () => {
+        const user = Oid.Create('User', 42).toString();
+        const header = Authorizer.createAuthHeader({
+          ...claims,
+          user
+        });
+        const authorizer = Authorizer.make(header, true);
+        expect(authorizer.getUser()).toBe(user);
+      });
+    });
+  });
+  describe('When: creating an auth header that does not contain a SYSADMIN scope', () => {
+    const claims = {
+      roles: {
+        [Roles.ADMIN]: [],
+        [Roles.USER]: [],
+        [Roles.PENDING]: []
+      },
+      scopes: [Scopes.USER]
+    };
+    describe('And: there is no user claim', () => {
+      test('Then: it throws', () => {
+        expect(() => Authorizer.createAuthHeader({ ...claims } as any)).toThrow(
+          'Cannot create an authHeader without specifying user claim'
+        );
+      });
+    });
+    describe('And: a user claim is present', () => {
+      test('Then: the specified user is respected', () => {
+        const user = Oid.Create('User', 42).toString();
+        const header = Authorizer.createAuthHeader({
+          ...claims,
+          user
+        });
+        const authorizer = Authorizer.make(header, true);
+        expect(authorizer.getUser()).toBe(user);
+      });
     });
   });
 });
