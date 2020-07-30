@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file. Starting wi
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [UNRELEASED]
+
+### Added
+  * Guarantee the presence of `claims.user`: https://www.pivotaltracker.com/story/show/174020936
+    * static `Authorizer.initialize()` to allow removing boilerplate passing of `SECRET`
+    * peer dependency on `@rumbleship/config` for type interfaces
+### Removed
+  * `createAuthHeader()` and `createRefreshHeader` in favor of static methods: `Authorizer.createAuthHeader()` and `Authorizer.createRefreshHeader()`
+  * deprecated methods; getRoles, getClient
+### Changed
+  * RefreshClaims has `user` instead of `owner` for consistency with `AccessClaims`
+### Fixed
+  * launch.json boilerplate for new debugger
+### Deprecated
+### Security
+
+
 ## [1.4.0] -- 2020-07-15
 
 ### Changed
