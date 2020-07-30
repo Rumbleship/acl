@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file. Starting wi
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [UNRELEASED]
+## [2.0.0] -- 2020-07-30
 
 ### Added
   * Guarantee the presence of `claims.user`: https://www.pivotaltracker.com/story/show/174020936
@@ -18,9 +18,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   * RefreshClaims has `user` instead of `owner` for consistency with `AccessClaims`
 ### Fixed
   * launch.json boilerplate for new debugger
-### Deprecated
-### Security
-
 
 ## [1.4.0] -- 2020-07-15
 
