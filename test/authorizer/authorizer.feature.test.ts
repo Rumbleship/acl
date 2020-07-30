@@ -1,3 +1,4 @@
+import { AccessClaims } from './../../lib/types.d';
 import { Authorizer } from './../../src/authorizer';
 import { Permissions } from './../../src/permissions-matrix';
 import { Roles, Resource, Scopes, Actions } from './../../src/types';
@@ -524,10 +525,11 @@ describe('Feature: `inScope()` always returns true for a system administrator', 
   });
 });
 describe('Feature: `inScope()` accepts an array or a single scope', () => {
-  const id = 'u_12345';
+  const user = Oid.Create('User', 72).toString();
   const authHeader = Authorizer.createAuthHeader({
+    user,
     roles: {
-      [Roles.ADMIN]: [id],
+      [Roles.ADMIN]: [user],
       [Roles.USER]: [],
       [Roles.PENDING]: []
     },
@@ -549,6 +551,65 @@ describe('Feature: `inScope()` accepts an array or a single scope', () => {
     });
     test('Then: a present scope passes', () => {
       expect(authorizer.inScope([Scopes.BANKINGADMIN])).toBe(true);
+    });
+  });
+});
+
+describe('Feature: automatic assignment of ServiceUser', () => {
+  describe('When: creating an auth header that includes SYSADMIN scope', () => {
+    const claims: AccessClaims = {
+      roles: {
+        [Roles.ADMIN]: [],
+        [Roles.USER]: [],
+        [Roles.PENDING]: []
+      },
+      scopes: [Scopes.SYSADMIN]
+    };
+    describe('And: there is no user claim', () => {
+      test('Then: the ServiceUser is assigned', () => {
+        const header = Authorizer.createAuthHeader({ ...claims });
+        const authorizer = Authorizer.make(header, true);
+        expect(authorizer.getUser()).toBe(MockConfig.ServiceUser.id);
+      });
+    });
+    describe('And: a user claim is present', () => {
+      test('Then: the specified user is respected', () => {
+        const user = Oid.Create('User', 42).toString();
+        const header = Authorizer.createAuthHeader({
+          ...claims,
+          user
+        });
+        const authorizer = Authorizer.make(header, true);
+        expect(authorizer.getUser()).toBe(user);
+      });
+    });
+  });
+  describe('When: creating an auth header that does not contain a SYSADMIN scope', () => {
+    const claims: AccessClaims = {
+      roles: {
+        [Roles.ADMIN]: [],
+        [Roles.USER]: [],
+        [Roles.PENDING]: []
+      },
+      scopes: [Scopes.USER]
+    };
+    describe('And: there is no user claim', () => {
+      test('Then: it throws', () => {
+        expect(() => Authorizer.createAuthHeader({ ...claims })).toThrow(
+          'Cannot create an authHeader without specifying user claim'
+        );
+      });
+    });
+    describe('And: a user claim is present', () => {
+      test('Then: the specified user is respected', () => {
+        const user = Oid.Create('User', 42).toString();
+        const header = Authorizer.createAuthHeader({
+          ...claims,
+          user
+        });
+        const authorizer = Authorizer.make(header, true);
+        expect(authorizer.getUser()).toBe(user);
+      });
     });
   });
 });

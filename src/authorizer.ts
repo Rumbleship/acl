@@ -60,11 +60,16 @@ export class Authorizer {
     claims: AccessClaims,
     jwt_options: jwt.SignOptions = { expiresIn: '9h' }
   ) {
-    if (!claims.user) {
-      if (!claims.scopes.includes(Scopes.SYSADMIN)) {
+    if (claims.scopes.includes(Scopes.SYSADMIN)) {
+      if (!claims.user) {
         claims.user = this.config.ServiceUser.id;
       }
+    } else {
+      if (!claims.user) {
+        throw new Error('Cannot create an authHeader without specifying user claim');
+      }
     }
+
     const access_token = jwt.sign(claims, this.config.AccessToken.secret, jwt_options);
     return `Bearer ${access_token}`;
   }
@@ -147,7 +152,7 @@ export class Authorizer {
   }
 
   marshalClaims(): string {
-    const claims = this.claims;
+    const claims = { ...this.claims };
     delete claims.iat;
     delete claims.exp;
     return new Buffer(JSON.stringify(claims)).toString('base64');
