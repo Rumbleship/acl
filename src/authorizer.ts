@@ -74,7 +74,7 @@ export class Authorizer {
     return `Bearer ${access_token}`;
   }
 
-  static createSysAdminAuthHeader(jwt_options: jwt.SignOptions = { expiresIn: '5m' }): string {
+  static createServiceUserAuthHeader(jwt_options: jwt.SignOptions = { expiresIn: '5m' }): string {
     return this.createAuthHeader(
       {
         roles: {},

@@ -197,7 +197,7 @@ describe('An authorizer can extend its access token', () => {
 
 describe('createSysAdminAuthHeader helper', () => {
   test('It builds a SysAdmin header with no roles and a SysAdmin scope', () => {
-    const header = Authorizer.createSysAdminAuthHeader();
+    const header = Authorizer.createServiceUserAuthHeader();
     const claims = jwt.decode(header.split(' ')[1]) as Claims;
     expect(claims.roles).toStrictEqual({});
     expect(claims.scopes).toStrictEqual([Scopes.SYSADMIN]);
