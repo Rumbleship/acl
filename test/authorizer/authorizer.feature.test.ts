@@ -506,14 +506,15 @@ describe('Feature: methods throw if the authorizer has not yet been authenticate
 
 describe('Feature: `inScope()` always returns true for a system administrator', () => {
   describe('Given: A user with an authHeader that contains SYSADMIN scope', () => {
-    const id = 'u_12345';
+    const user = Oid.create('User', 1).toString();
     const authHeader = Authorizer.createAuthHeader({
       roles: {
-        [Roles.ADMIN]: [id],
+        [Roles.ADMIN]: [user],
         [Roles.USER]: [],
         [Roles.PENDING]: []
       },
-      scopes: [Scopes.SYSADMIN]
+      scopes: [Scopes.SYSADMIN],
+      user
     });
     const authorizer = new Authorizer(authHeader);
     authorizer.authenticate();
@@ -563,7 +564,8 @@ describe('Feature: automatic assignment of ServiceUser', () => {
         [Roles.USER]: [],
         [Roles.PENDING]: []
       },
-      scopes: [Scopes.SYSADMIN]
+      scopes: [Scopes.SYSADMIN],
+      user: MockConfig.ServiceUser.id
     };
     describe('And: there is no user claim', () => {
       test('Then: the ServiceUser is assigned', () => {
@@ -585,7 +587,7 @@ describe('Feature: automatic assignment of ServiceUser', () => {
     });
   });
   describe('When: creating an auth header that does not contain a SYSADMIN scope', () => {
-    const claims: AccessClaims = {
+    const claims = {
       roles: {
         [Roles.ADMIN]: [],
         [Roles.USER]: [],
@@ -595,7 +597,7 @@ describe('Feature: automatic assignment of ServiceUser', () => {
     };
     describe('And: there is no user claim', () => {
       test('Then: it throws', () => {
-        expect(() => Authorizer.createAuthHeader({ ...claims })).toThrow(
+        expect(() => Authorizer.createAuthHeader({ ...claims } as any)).toThrow(
           'Cannot create an authHeader without specifying user claim'
         );
       });
