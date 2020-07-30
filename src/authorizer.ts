@@ -74,6 +74,17 @@ export class Authorizer {
     return `Bearer ${access_token}`;
   }
 
+  static createSysAdminAuthHeader(jwt_options: jwt.SignOptions = { expiresIn: '5m' }): string {
+    return this.createAuthHeader(
+      {
+        roles: {},
+        scopes: [Scopes.SYSADMIN],
+        user: this.config.ServiceUser.id
+      },
+      jwt_options
+    );
+  }
+
   static createRefreshToken(user: string, jwt_options: jwt.SignOptions = { expiresIn: '9h' }) {
     const claims: RefreshClaims = {
       user,
