@@ -1,6 +1,6 @@
 import * as jwt from 'jsonwebtoken';
 import { Permissions } from './permissions-matrix';
-import { Scopes, Actions, Resource, AccessClaims } from './types';
+import { Scopes, Actions, Resource, AccessClaims, GrantTypes } from './types';
 import { AuthorizerTreatAsMap } from './authorizer-treat-as.directive';
 import { ISharedSchema } from '@rumbleship/config';
 export declare class Authorizer {
@@ -32,6 +32,20 @@ export declare class Authorizer {
     marshalClaims(): string;
     authenticate(): void;
     getUser(): string;
+    /**
+     * @deprecated in favor of `marshalClaims()` + `Authorizer.make()`. Old Mediator code requires
+     * access to the raw claims. Chore: https://www.pivotaltracker.com/story/show/174103802
+     */
+    getClaims(): {
+        exp: number;
+        iat: number;
+        name?: string | undefined;
+        user: string;
+        client?: string | undefined;
+        roles: import("./types").RolesAt;
+        scopes: Scopes[];
+        grant_type: GrantTypes;
+    };
     /**
      * Type-GraphQL compatible method that singularly answers the question:
      * "Given the accessToken that this Authorizer represents:

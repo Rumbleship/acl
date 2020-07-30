@@ -185,6 +185,14 @@ export class Authorizer {
   }
 
   /**
+   * @deprecated in favor of `marshalClaims()` + `Authorizer.make()`. Old Mediator code requires
+   * access to the raw claims. Chore: https://www.pivotaltracker.com/story/show/174103802
+   */
+  getClaims() {
+    return { ...this.claims };
+  }
+
+  /**
    * Type-GraphQL compatible method that singularly answers the question:
    * "Given the accessToken that this Authorizer represents:
    *    - can I take an Action against an Authorizable object, given a set of Permissions"
