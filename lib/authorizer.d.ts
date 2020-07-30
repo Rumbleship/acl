@@ -17,7 +17,7 @@ export declare class Authorizer {
     private get claims();
     static initialize(config: Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'>): void;
     static createAuthHeader(claims: AccessClaims, jwt_options?: jwt.SignOptions): string;
-    static createRefreshHeader(owner: string, jwt_options?: jwt.SignOptions): string;
+    static createRefreshToken(owner: string, jwt_options?: jwt.SignOptions): string;
     static make(header_or_marshalled_claims: string, authenticate_immediately?: boolean): Authorizer;
     constructor(authorizationHeader: string);
     /**
