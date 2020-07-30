@@ -1,46 +1,42 @@
+import { Oid } from '@rumbleship/oid';
+import { MockConfig } from './../mock-config';
 import { Permissions } from './../../src/permissions-matrix';
 import { Authorizer } from './../../src/authorizer';
-import { Roles, Resource, Actions } from './../../src/types';
-import { createAuthHeader } from './../../src/helpers';
+import { Roles, Resource, Actions, Scopes } from './../../src/types';
 import { AuthorizerTreatAs } from './../../src/authorizer-treat-as.directive';
 
-const SECRET = 'signingsecret';
-const user_id = 'u_abcde';
-const owner_id = 'u_different';
-const authorizable = { user_id, owner_id };
-const userOfUserRelatedToAuthorizableeHeader = createAuthHeader(
-  {
-    roles: {
-      [Roles.ADMIN]: [],
-      [Roles.USER]: [user_id],
-      [Roles.PENDING]: []
-    },
-    scopes: []
+Authorizer.initialize(MockConfig);
+
+const user = Oid.Create('User', 1).toString();
+const different_user = Oid.Create('User', 2).toString();
+const authorizable = { user_id: user, owner_id: different_user };
+const userOfUserRelatedToAuthorizableeHeader = Authorizer.createAuthHeader({
+  roles: {
+    [Roles.ADMIN]: [],
+    [Roles.USER]: [user],
+    [Roles.PENDING]: []
   },
-  SECRET
-);
-const userOfOwnerRelatedToAuthorizable = createAuthHeader(
-  {
-    roles: {
-      [Roles.ADMIN]: [],
-      [Roles.USER]: [owner_id],
-      [Roles.PENDING]: []
-    },
-    scopes: []
+  scopes: [Scopes.USER],
+  user
+});
+const userOfOwnerRelatedToAuthorizable = Authorizer.createAuthHeader({
+  roles: {
+    [Roles.ADMIN]: [],
+    [Roles.USER]: [different_user],
+    [Roles.PENDING]: []
   },
-  SECRET
-);
-const pendingUserAuthHeader = createAuthHeader(
-  {
-    roles: {
-      [Roles.ADMIN]: [],
-      [Roles.USER]: [],
-      [Roles.PENDING]: [user_id]
-    },
-    scopes: []
+  scopes: [],
+  user: different_user
+});
+const pendingUserAuthHeader = Authorizer.createAuthHeader({
+  roles: {
+    [Roles.ADMIN]: [],
+    [Roles.USER]: [],
+    [Roles.PENDING]: [user]
   },
-  SECRET
-);
+  scopes: [],
+  user
+});
 
 const matrix = new Permissions();
 matrix.allow({
@@ -55,8 +51,7 @@ class SuperClass {
   constructor(public user_id: string) {}
   permissionedByExternalAuthorizable(header: string): boolean {
     this.superCallCount++;
-    const authorizer = new Authorizer(header, SECRET);
-    authorizer.authenticate();
+    const authorizer = Authorizer.make(header, true);
     if (authorizer.can(Actions.QUERY, authorizable, matrix)) {
       return true;
     }
@@ -64,8 +59,7 @@ class SuperClass {
   }
   reflexiveMethod(header: string): boolean {
     this.superCallCount++;
-    const authorizer = new Authorizer(header, SECRET);
-    authorizer.authenticate();
+    const authorizer = Authorizer.make(header, true);
     if (authorizer.can(Actions.QUERY, this, matrix)) {
       return true;
     }
@@ -85,8 +79,8 @@ class PropertyDecoratorSubclass extends SuperClass {
 }
 
 describe('Given: instance of a subclass that extends super', () => {
-  const mySuper = new SuperClass(user_id);
-  const mySub = new PropertyDecoratorSubclass(user_id, owner_id);
+  const mySuper = new SuperClass(user);
+  const mySub = new PropertyDecoratorSubclass(user, different_user);
   describe('And: the subclass has decorated a property to force processing of `owner_id` as a reference to a `Resource.User`', () => {
     describe('And: the permissioned action uses a wholly different object to permission on', () => {
       describe('When: invoking method with a jwt that matches on `user_id`', () => {
