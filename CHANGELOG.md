@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   * `createAuthHeader()` and `createRefreshHeader` in favor of static methods: `Authorizer.createAuthHeader()` and `Authorizer.createRefreshHeader()`
   * deprecated methods; getRoles, getClient
 ### Changed
+  * RefreshClaims has `user` instead of `owner` for consistency with `AccessClaims`
 ### Fixed
   * launch.json boilerplate for new debugger
 ### Deprecated

@@ -38,13 +38,13 @@ export declare type RolesAt = {
 };
 export interface AccessClaims {
     name?: string;
-    user?: string;
+    user: string;
     client?: string;
     roles: RolesAt;
     scopes: Scopes[];
 }
 export interface RefreshClaims {
-    owner: string;
+    user: string;
     grant_type: GrantTypes;
 }
 export interface Claims extends AccessClaims, RefreshClaims {

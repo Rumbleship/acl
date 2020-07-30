@@ -74,9 +74,9 @@ export class Authorizer {
     return `Bearer ${access_token}`;
   }
 
-  static createRefreshToken(owner: string, jwt_options: jwt.SignOptions = { expiresIn: '9h' }) {
+  static createRefreshToken(user: string, jwt_options: jwt.SignOptions = { expiresIn: '9h' }) {
     const claims: RefreshClaims = {
-      owner,
+      user,
       grant_type: GrantTypes.REFRESH
     };
     return jwt.sign(claims, this.config.AccessToken.secret, jwt_options);
