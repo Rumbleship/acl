@@ -22,6 +22,7 @@ export declare enum Resource {
     Order = "Order"
 }
 export declare enum Scopes {
+    MIGRATION = "migration",
     USER = "user",
     API_KEY = "api_key",
     SYSADMIN = "system:*",
