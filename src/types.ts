@@ -26,6 +26,7 @@ export enum Resource {
 }
 
 export enum Scopes {
+  MIGRATION = 'migration',
   USER = 'user',
   API_KEY = 'api_key',
   SYSADMIN = 'system:*',
