@@ -481,7 +481,7 @@ describe('Feature: methods throw if the authorizer has not yet been authenticate
     beforeAll(() => {
       authenticated.authenticate();
     });
-    describe.each(['getUser', 'inScope'])(
+    describe.each(['getUser', 'inScope', 'getOnBehalfOf'])(
       'When: invoking %s on the unauthenticated authorizer',
       methodName => {
         test('Then: an error is thrown', () => {
@@ -489,7 +489,7 @@ describe('Feature: methods throw if the authorizer has not yet been authenticate
         });
       }
     );
-    describe.each(['getUser', 'inScope'])(
+    describe.each(['getUser', 'inScope', 'getOnBehalfOf'])(
       'When: invoking %s on the authenticated authorizer',
       methodName => {
         test('Then: no error is thrown', () => {

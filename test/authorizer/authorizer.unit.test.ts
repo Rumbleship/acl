@@ -6,6 +6,7 @@ import * as jwt from 'jsonwebtoken';
 import { Authorizer } from './../../src/authorizer';
 import { baseRoles } from './../../src/helpers';
 import { MockConfig } from './../mock-config';
+import { Oid } from '@rumbleship/oid';
 
 Authorizer.initialize(MockConfig);
 
@@ -134,8 +135,8 @@ describe('Feature: Marshaling an Authorizer', () => {
 
       const hydrated_claims: Claims = Reflect.get(hydrated, 'claims');
       const { iat: hydrated_iat, exp: hydrated_exp } = hydrated_claims;
-      delete hydrated_claims.iat;
-      delete hydrated_claims.exp;
+      delete (hydrated_claims as any).iat;
+      delete (hydrated_claims as any).exp;
       expect(new Date(hydrated_iat * 1000)).toEqual(the_future.toDate());
       expect(new Date(hydrated_exp * 1000)).toEqual(the_future.add(9, 'hours').toDate());
 
@@ -202,5 +203,49 @@ describe('createSysAdminAuthHeader helper', () => {
     expect(claims.roles).toStrictEqual({});
     expect(claims.scopes).toStrictEqual([Scopes.SYSADMIN]);
     expect(claims.user).toBe(MockConfig.ServiceUser.id);
+  });
+});
+
+describe('Getting the onBehalfOf claim', () => {
+  const user = Oid.Create('User', 1).toString();
+  const claims: AccessClaims = {
+    user,
+    roles: {
+      [Roles.ADMIN]: [user],
+      [Roles.USER]: [],
+      [Roles.PENDING]: []
+    },
+    scopes: [Scopes.USER]
+  };
+  describe('When: `on_behalf_of` is a valid oid string', () => {
+    const on_behalf_of = Oid.Create('Buyer', 1);
+    const authHeader = Authorizer.createAuthHeader({
+      ...claims,
+      on_behalf_of: on_behalf_of.toString()
+    });
+    const authorizer = new Authorizer(authHeader);
+    authorizer.authenticate();
+    test('Then: an Oid instance is returned', () => {
+      const target = authorizer.getOnBehalfOf();
+      expect(target).toBeInstanceOf(Oid);
+      expect(target).toStrictEqual(on_behalf_of);
+    });
+  });
+  describe('When: `on_behalf_of` is present and not a valid oid string', () => {
+    const on_behalf_of = 'b_garbage';
+    const authHeader = Authorizer.createAuthHeader({ ...claims, on_behalf_of });
+    const authorizer = new Authorizer(authHeader);
+    authorizer.authenticate();
+    test('Then: an error is thrown', () => {
+      expect(() => authorizer.getOnBehalfOf()).toThrow();
+    });
+  });
+  describe('When: `on_behalf_of` is undefined', () => {
+    const authHeader = Authorizer.createAuthHeader({ ...claims, on_behalf_of: undefined });
+    const authorizer = new Authorizer(authHeader);
+    authorizer.authenticate();
+    test('Then: undefined is returned', () => {
+      expect(authorizer.getOnBehalfOf()).toBe(undefined);
+    });
   });
 });
