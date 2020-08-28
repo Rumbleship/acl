@@ -1,4 +1,5 @@
 import * as jwt from 'jsonwebtoken';
+import { Oid } from '@rumbleship/oid';
 import { Permissions } from './permissions-matrix';
 import { Scopes, Actions, Resource, AccessClaims, GrantTypes } from './types';
 import { AuthorizerTreatAsMap } from './authorizer-treat-as.directive';
@@ -8,12 +9,13 @@ export declare class Authorizer {
     private static _initialized;
     private static _ServiceUser;
     private static _AccessToken;
-    protected static get config(): Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'>;
     private accessToken;
     private roles;
-    private get user();
-    private get scopes();
     private _claims?;
+    protected static get config(): Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'>;
+    private get user();
+    private get on_behalf_of();
+    private get scopes();
     private get claims();
     static initialize(config: Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'>): void;
     static createAuthHeader(claims: AccessClaims, jwt_options?: jwt.SignOptions): string;
@@ -32,6 +34,7 @@ export declare class Authorizer {
     marshalClaims(): string;
     authenticate(): void;
     getUser(): string;
+    getOnBehalfOf(): Oid | undefined;
     /**
      * @deprecated in favor of `marshalClaims()` + `Authorizer.make()`. Old Mediator code requires
      * access to the raw claims. Chore: https://www.pivotaltracker.com/story/show/174103802
@@ -41,6 +44,7 @@ export declare class Authorizer {
         iat: number;
         name?: string | undefined;
         user: string;
+        on_behalf_of?: string | undefined;
         client?: string | undefined;
         roles: import("./types").RolesAt;
         scopes: Scopes[];
