@@ -48,6 +48,7 @@ export type RolesAt = {
 export interface AccessClaims {
   name?: string;
   user: string;
+  on_behalf_of?: string;
   client?: string;
   roles: RolesAt;
   scopes: Scopes[];
