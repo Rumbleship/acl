@@ -25,6 +25,10 @@ export class Authorizer {
   private static _initialized: boolean = false;
   private static _ServiceUser: IServiceUserConfig;
   private static _AccessToken: IAccessTokenConfig;
+  private accessToken: string;
+  private roles: RolesAndIdentifiers = new RolesAndIdentifiers();
+
+  private _claims?: Claims;
   protected static get config(): Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'> {
     if (!this._initialized) {
       throw new Error('Must initialize Authorizer');
@@ -34,16 +38,18 @@ export class Authorizer {
       ServiceUser: this._ServiceUser
     };
   }
-  private accessToken: string;
-  private roles: RolesAndIdentifiers = new RolesAndIdentifiers();
   private get user(): string {
     return this._claims?.user as string;
+  }
+  private get on_behalf_of(): Oid | undefined {
+    if (this._claims?.on_behalf_of) {
+      return new Oid(this._claims?.on_behalf_of);
+    }
+    return undefined;
   }
   private get scopes(): Scopes[] {
     return this._claims?.scopes ?? [];
   }
-
-  private _claims?: Claims;
   private get claims(): Claims {
     if (!this._claims) {
       throw new Error('Authorizer must be authenticated');
@@ -144,8 +150,8 @@ export class Authorizer {
    */
   extend(new_jwt_options: jwt.SignOptions = { expiresIn: '9h' }) {
     const claims_clone = { ...this.claims };
-    delete claims_clone.iat;
-    delete claims_clone.exp;
+    delete (claims_clone as any).iat;
+    delete (claims_clone as any).exp;
     this.accessToken = Authorizer.createAuthHeader(claims_clone, new_jwt_options).split(' ')[1];
     this.authenticate();
   }
@@ -164,8 +170,8 @@ export class Authorizer {
 
   marshalClaims(): string {
     const claims = { ...this.claims };
-    delete claims.iat;
-    delete claims.exp;
+    delete (claims as any).iat;
+    delete (claims as any).exp;
     return Buffer.from(JSON.stringify(claims)).toString('base64');
   }
 
@@ -182,6 +188,11 @@ export class Authorizer {
   @Requires('authenticate')
   getUser(): string {
     return this.user as string;
+  }
+
+  @Requires('authenticate')
+  getOnBehalfOf(): Oid | undefined {
+    return this.on_behalf_of;
   }
 
   /**
