@@ -22,7 +22,7 @@ const BEARER_TOKEN_REGEX = /^Bearer [A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-
 class RolesAndIdentifiers extends OneToUniqueManyMap<Roles, string> {}
 
 export class Authorizer {
-  private static _initialized: boolean = false;
+  private static _initialized = false;
   private static _ServiceUser: IServiceUserConfig;
   private static _AccessToken: IAccessTokenConfig;
   private accessToken: string;
@@ -57,7 +57,7 @@ export class Authorizer {
     return this._claims;
   }
 
-  static initialize(config: Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'>) {
+  static initialize(config: Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'>): void {
     this._AccessToken = { ...config.AccessToken };
     this._ServiceUser = { ...config.ServiceUser };
     this._initialized = true;
@@ -65,7 +65,7 @@ export class Authorizer {
   static createAuthHeader(
     claims: AccessClaims,
     jwt_options: jwt.SignOptions = { expiresIn: '9h' }
-  ) {
+  ): string {
     if (claims.scopes.includes(Scopes.SYSADMIN)) {
       if (!claims.user) {
         claims.user = this.config.ServiceUser.id;
@@ -91,7 +91,10 @@ export class Authorizer {
     );
   }
 
-  static createRefreshToken(user: string, jwt_options: jwt.SignOptions = { expiresIn: '9h' }) {
+  static createRefreshToken(
+    user: string,
+    jwt_options: jwt.SignOptions = { expiresIn: '9h' }
+  ): string {
     const claims: RefreshClaims = {
       user,
       grant_type: GrantTypes.REFRESH
@@ -99,10 +102,7 @@ export class Authorizer {
     return jwt.sign(claims, this.config.AccessToken.secret, jwt_options);
   }
 
-  static make(
-    header_or_marshalled_claims: string,
-    authenticate_immediately: boolean = false
-  ): Authorizer {
+  static make(header_or_marshalled_claims: string, authenticate_immediately = false): Authorizer {
     if (!Authorizer._initialized) {
       throw new Error('Must initialize Authorizer');
     }
@@ -148,7 +148,7 @@ export class Authorizer {
    * @note I don't really like this, but without the true auth server, this is required
    * to be able to effectively continuously authorize long-lived subscriptions.
    */
-  extend(new_jwt_options: jwt.SignOptions = { expiresIn: '9h' }) {
+  extend(new_jwt_options: jwt.SignOptions = { expiresIn: '9h' }): void {
     const claims_clone = { ...this.claims };
     delete (claims_clone as any).iat;
     delete (claims_clone as any).exp;
@@ -199,7 +199,7 @@ export class Authorizer {
    * @deprecated in favor of `marshalClaims()` + `Authorizer.make()`. Old Mediator code requires
    * access to the raw claims. Chore: https://www.pivotaltracker.com/story/show/174103802
    */
-  getClaims() {
+  getClaims(): Claims {
     return { ...this.claims };
   }
 
@@ -237,10 +237,10 @@ export class Authorizer {
   @Requires('authenticate')
   public can(
     requestedAction: Actions,
-    authorizable: object,
+    authorizable: Record<string, unknown>,
     matrix: Permissions,
     treatAuthorizableAttributesAs: AuthorizerTreatAsMap = getAuthorizerTreatAs(authorizable)
-  ) {
+  ): boolean {
     let access = false;
 
     if (this.inScope(Scopes.SYSADMIN)) {

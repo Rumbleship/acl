@@ -12,8 +12,8 @@ export class AuthorizerTreatAsMap extends OneToUniqueManyMap<Resource, string> {
  *
  */
 export function getAuthorizerTreatAs(
-  authorizable: any,
-  apply_inflected_defaults: boolean = true
+  authorizable: Record<string, unknown>,
+  apply_inflected_defaults = true
 ): AuthorizerTreatAsMap {
   const retrieved: AuthorizerTreatAsMap =
     Reflect.getMetadata(AuthResourceSymbol, authorizable) ?? new AuthorizerTreatAsMap();
@@ -26,7 +26,7 @@ export function getAuthorizerTreatAs(
     for (const resource of Object.keys(Resource)) {
       cloned_map.add(resource as Resource, 'id');
       const key = `${resource.toLowerCase()}_id`;
-      if (Reflect.has(authorizable, key)) {
+      if (Reflect.has(authorizable as Record<string, unknown>, key)) {
         cloned_map.add(resource as Resource, key);
       }
     }
@@ -42,8 +42,8 @@ export function getAuthorizerTreatAs(
 export function AuthorizerTreatAs(
   singleOrListOfResources: Resource | Resource[]
 ): ParameterDecorator & PropertyDecorator {
-  function propertyDecoratorImpl(target: object, propertyKey: string | symbol) {
-    const retrieved: AuthorizerTreatAsMap = Reflect.getMetadata(AuthResourceSymbol, target);
+  function propertyDecoratorImpl(target: unknown, propertyKey: string | symbol) {
+    const retrieved: AuthorizerTreatAsMap = Reflect.getMetadata(AuthResourceSymbol, target as any);
     const treatAsMap = retrieved || new AuthorizerTreatAsMap();
     if (!Array.isArray(singleOrListOfResources)) {
       singleOrListOfResources = [singleOrListOfResources];
@@ -51,7 +51,7 @@ export function AuthorizerTreatAs(
     for (const resource of singleOrListOfResources) {
       treatAsMap.add(resource, propertyKey.toString());
     }
-    Reflect.defineMetadata(AuthResourceSymbol, treatAsMap, target);
+    Reflect.defineMetadata(AuthResourceSymbol, treatAsMap, target as any);
   }
   // Cannot apply parameter decorators to constructors and add metadata based on the property
   // see: https://github.com/microsoft/TypeScript/issues/15904
@@ -66,7 +66,7 @@ export function AuthorizerTreatAs(
   //   Reflect.defineMetadata(AuthResourceSymbol, treatAsMap, target);
   // }
   return (...args: PropertyDecoratorArgs) => {
-    propertyDecoratorImpl(args[0], args[1]);
+    propertyDecoratorImpl(args[0] as unknown, args[1]);
     // args.length === 2
     //   ? propertyDecoratorImpl(args[0], args[1])
     //   : parameterDecoratorImpl(args[0], args[1], (args as ParameterDecoratorArgs)[2]);
@@ -82,9 +82,9 @@ export function AuthorizerTreatAs(
 //  declare type PropertyDecorator = (target: Object, propertyKey: string | symbol) => void;
 // declare type ParameterDecorator = (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
 
-// tslint:disable-next-line: ban-types
+// eslint-disable-next-line @typescript-eslint/ban-types
 interface PropertyDecoratorArgs extends Array<Object | string | symbol> {
-  // tslint:disable-next-line: ban-types
+  // eslint-disable-next-line @typescript-eslint/ban-types
   0: Object;
   1: string | symbol;
 }

@@ -42,7 +42,7 @@ describe('Unit: @AuthorizeTreatAs', () => {
 
 describe('Unit: getAuthorizerTreatAs', () => {
   describe('Given: an undecorated authorizable', () => {
-    const undecoratedAuthorizable: object = {
+    const undecoratedAuthorizable = {
       user_id: 'foo',
       division_id: 'bar'
     };
@@ -77,7 +77,7 @@ describe('Unit: getAuthorizerTreatAs', () => {
   describe('Given: a decorated authorizable', () => {
     class DecoratedAuthorizable {
       @AuthorizerTreatAs(Resource.Division)
-      arbitrary_id: string = 'quux';
+      arbitrary_id = 'quux';
     }
     const authorizable = new DecoratedAuthorizable();
     describe.each([true, undefined])(
@@ -107,7 +107,7 @@ describe('Feature: An arbitrary id can be decorated to correspond to multiple re
   describe('Given: a decorated authorizable', () => {
     class DecoratedAuthorizable {
       @AuthorizerTreatAs([Resource.Division, Resource.User])
-      arbitrary_id: string = 'quux';
+      arbitrary_id = 'quux';
     }
 
     test('It assigns decorated properties to the specified resource key as well as inflecting', () => {

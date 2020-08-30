@@ -10,7 +10,7 @@ export class OneToUniqueManyMap<K, V> extends Map<K, Set<V>> {
       this.add(k, v);
     }
   }
-  add(one: K, v: V | V[]) {
+  add(one: K, v: V | V[]): void {
     v = Array.isArray(v) ? v : [v];
     const many = this.get(one) || new Set<V>();
     for (const entry of v) {

@@ -46,7 +46,7 @@ matrix.allow({
 });
 
 class SuperClass {
-  superCallCount: number = 0;
+  superCallCount = 0;
   // tslint:disable-next-line: no-shadowed-variable
   constructor(public user_id: string) {}
   permissionedByExternalAuthorizable(header: string): boolean {

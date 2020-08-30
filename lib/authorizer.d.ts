@@ -1,7 +1,7 @@
 import * as jwt from 'jsonwebtoken';
 import { Oid } from '@rumbleship/oid';
 import { Permissions } from './permissions-matrix';
-import { Scopes, Actions, Resource, AccessClaims, GrantTypes } from './types';
+import { Claims, Scopes, Actions, Resource, AccessClaims } from './types';
 import { AuthorizerTreatAsMap } from './authorizer-treat-as.directive';
 import { ISharedSchema } from '@rumbleship/config';
 export declare class Authorizer {
@@ -39,17 +39,7 @@ export declare class Authorizer {
      * @deprecated in favor of `marshalClaims()` + `Authorizer.make()`. Old Mediator code requires
      * access to the raw claims. Chore: https://www.pivotaltracker.com/story/show/174103802
      */
-    getClaims(): {
-        exp: number;
-        iat: number;
-        name?: string | undefined;
-        user: string;
-        on_behalf_of?: string | undefined;
-        client?: string | undefined;
-        roles: import("./types").RolesAt;
-        scopes: Scopes[];
-        grant_type: GrantTypes;
-    };
+    getClaims(): Claims;
     /**
      * Type-GraphQL compatible method that singularly answers the question:
      * "Given the accessToken that this Authorizer represents:
@@ -81,7 +71,7 @@ export declare class Authorizer {
      *   authorizer.can(Actions.READ, new Workflow('u_12345'), matrix ) // false;
      * ```
      */
-    can(requestedAction: Actions, authorizable: object, matrix: Permissions, treatAuthorizableAttributesAs?: AuthorizerTreatAsMap): boolean;
+    can(requestedAction: Actions, authorizable: Record<string, unknown>, matrix: Permissions, treatAuthorizableAttributesAs?: AuthorizerTreatAsMap): boolean;
     identifiersThatCan({ action, matrix, only }: {
         action: Actions | Actions[];
         matrix: Permissions;
