@@ -71,7 +71,7 @@ export declare class Authorizer {
      *   authorizer.can(Actions.READ, new Workflow('u_12345'), matrix ) // false;
      * ```
      */
-    can(requestedAction: Actions, authorizable: Record<string, unknown>, matrix: Permissions, treatAuthorizableAttributesAs?: AuthorizerTreatAsMap): boolean;
+    can(requestedAction: Actions, authorizable: any, matrix: Permissions, treatAuthorizableAttributesAs?: AuthorizerTreatAsMap): boolean;
     identifiersThatCan({ action, matrix, only }: {
         action: Actions | Actions[];
         matrix: Permissions;

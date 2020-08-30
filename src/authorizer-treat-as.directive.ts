@@ -12,7 +12,7 @@ export class AuthorizerTreatAsMap extends OneToUniqueManyMap<Resource, string> {
  *
  */
 export function getAuthorizerTreatAs(
-  authorizable: Record<string, unknown>,
+  authorizable: any,
   apply_inflected_defaults = true
 ): AuthorizerTreatAsMap {
   const retrieved: AuthorizerTreatAsMap =

@@ -237,7 +237,7 @@ export class Authorizer {
   @Requires('authenticate')
   public can(
     requestedAction: Actions,
-    authorizable: Record<string, unknown>,
+    authorizable: any,
     matrix: Permissions,
     treatAuthorizableAttributesAs: AuthorizerTreatAsMap = getAuthorizerTreatAs(authorizable)
   ): boolean {

@@ -12,7 +12,7 @@ export declare class AuthorizerTreatAsMap extends OneToUniqueManyMap<Resource, s
  *    `...{User: new Set(['id', 'user_id'])}`
  *
  */
-export declare function getAuthorizerTreatAs(authorizable: Record<string, unknown>, apply_inflected_defaults?: boolean): AuthorizerTreatAsMap;
+export declare function getAuthorizerTreatAs(authorizable: any, apply_inflected_defaults?: boolean): AuthorizerTreatAsMap;
 /**
  *
  * @param singleOrListOfResources The resource that should be explicitly connected to the target
