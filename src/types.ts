@@ -17,8 +17,7 @@ export enum Actions {
   // these values are uppercased to be compatible with keys to make it easier to access values without having to change the case --2019-08-06 @preeV42500
   PURCHASE = 'PURCHASE',
   SHIP = 'SHIP',
-  RETURN = 'RETURN',
-  ORDER_TOKEN_EXCHANGE = 'ORDER_TOKEN_EXCHANGE'
+  RETURN = 'RETURN'
 }
 export enum Resource {
   Division = 'Division',
