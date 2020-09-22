@@ -14,7 +14,8 @@ export declare enum Actions {
     REQUEST = "request",
     PURCHASE = "PURCHASE",
     SHIP = "SHIP",
-    RETURN = "RETURN"
+    RETURN = "RETURN",
+    ORDER_TOKEN_EXCHANGE = "ORDER_TOKEN_EXCHANGE"
 }
 export declare enum Resource {
     Division = "Division",
