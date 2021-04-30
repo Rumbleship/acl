@@ -1,0 +1,5 @@
+node_modules/**/*
+node_modules.mac/**/*
+lib/**/*
+jest.config.js
+coverage/**/*

@@ -8,7 +8,7 @@ export function Required(): MethodDecorator {
       writable: true
     });
     const originalMethod = descriptor.value;
-    descriptor.value = function(...args: any[]) {
+    descriptor.value = function (...args: any[]) {
       this[methodNameCallCount]++;
       return originalMethod.apply(this, args);
     };
@@ -18,7 +18,7 @@ export function Required(): MethodDecorator {
 export function Requires(methodName: string | symbol): MethodDecorator {
   return (target: any, propertyName: string | symbol, descriptor: any) => {
     const originalMethod = descriptor.value;
-    descriptor.value = function(...args: any[]) {
+    descriptor.value = function (...args: any[]) {
       const methodNameCalled = Symbol.for(`${methodName.toString()}CallCount`);
       const count = this[methodNameCalled];
       if (!count) {

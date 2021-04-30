@@ -2,7 +2,7 @@
   /* THis is used for the vscode and test */
   "extends": "./tsconfig-base.json",
   "compilerOptions": {
-    "outDir": "./test_out" /* Redirect output structure to the directory. */,
+    "outDir": "./test_out" /* Redirect output structure to the directory. */
   },
-  "include": ["./src/**/*.ts", "./test/**/*.ts"],
+  "include": ["./src/**/*.ts", "./test/**/*.ts", "**/*.eslintrc.js", ".jest.config.js"]
 }

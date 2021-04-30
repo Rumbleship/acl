@@ -125,9 +125,7 @@ describe('Feature: Marshaling an Authorizer', () => {
   describe('When: making an authorizer from marshaled string', () => {
     test('Then: an authorizer with default expriry is returned', () => {
       const marshalled = authorizer.marshalClaims();
-      const the_future = moment()
-        .add(5, 'days')
-        .milliseconds(0);
+      const the_future = moment().add(5, 'days').milliseconds(0);
       tk.freeze(the_future.toDate());
       const hydrated = Authorizer.make(marshalled);
       hydrated.authenticate();
@@ -174,19 +172,12 @@ describe('An authorizer can extend its access token', () => {
       test('Then: `exp` on the authorizers claims is extended', () => {
         const extended_claims: Claims = Reflect.get(authorizer, 'claims');
         expect(new Date(extended_claims.exp * 1000)).toEqual(
-          moment(now)
-            .milliseconds(0)
-            .add(9, 'h')
-            .toDate()
+          moment(now).milliseconds(0).add(9, 'h').toDate()
         );
       });
       test('Then: `iat` on the authorizers claims is the frozen time', () => {
         const extended_claims: Claims = Reflect.get(authorizer, 'claims');
-        expect(new Date(extended_claims.iat * 1000)).toEqual(
-          moment(now)
-            .milliseconds(0)
-            .toDate()
-        );
+        expect(new Date(extended_claims.iat * 1000)).toEqual(moment(now).milliseconds(0).toDate());
       });
     });
 
