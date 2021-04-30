@@ -1,4 +1,5 @@
 # ACL
+ACL library provided for example/use with [Rumbleship GQL Framework](https://github.com/rumbleship/rfi-gql-framework/)
 
 ## The Four Questions
 Authentication & Authorization have four critical questions:
