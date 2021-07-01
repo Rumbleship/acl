@@ -1,4 +1,5 @@
 export * from './authorizer';
+export * from './auth0-authorizer';
 export * from './errors';
 export * from './helpers';
 export * from './types';
