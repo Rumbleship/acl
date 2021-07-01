@@ -91,7 +91,7 @@ export class Auth0Authorizer extends Authorizer {
       return new Auth0Authorizer(Auth0Authorizer.createAuthHeader(hydrated_claims));
     })();
     if (authenticate_immediately) {
-      authorizer.authenticate();
+      void authorizer.authenticate();
     }
     return authorizer;
   }
@@ -109,7 +109,7 @@ export class Auth0Authorizer extends Authorizer {
     this.accessToken = Auth0Authorizer.createAuthHeader(claims_clone, new_jwt_options).split(
       ' '
     )[1];
-    this.authenticate();
+    void this.authenticate();
   }
 
   isExpired(): boolean {
