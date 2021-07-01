@@ -4,13 +4,13 @@ import { Permissions } from './permissions-matrix';
 import { Claims, Scopes, Actions, Resource, AccessClaims } from './types';
 import { AuthorizerTreatAsMap } from './authorizer-treat-as.directive';
 import { ISharedSchema } from '@rumbleship/config';
-import { Authorizer } from './authorizer';
+import { AuthorizerAbstract } from './authorizer';
 export interface Auth0Config {
     domain: string;
     audience: string;
     clientId: string;
 }
-export declare class Auth0Authorizer extends Authorizer {
+export declare class Auth0Authorizer extends AuthorizerAbstract {
     private static _Auth0;
     static initialize(config: Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'>, auth0: Auth0Config): void;
     static createAuthHeader(claims: AccessClaims, jwt_options?: jwt.SignOptions): string;

@@ -7,7 +7,7 @@ import { AuthorizerTreatAsMap } from './authorizer-treat-as.directive';
 import { ISharedSchema, IServiceUserConfig, IAccessTokenConfig } from '@rumbleship/config';
 declare class RolesAndIdentifiers extends OneToUniqueManyMap<Roles, string> {
 }
-export declare class Authorizer {
+export declare abstract class AuthorizerAbstract {
     private authorizationHeader;
     protected static _initialized: boolean;
     protected static _ServiceUser: IServiceUserConfig;
@@ -81,5 +81,7 @@ export declare class Authorizer {
         only?: Resource;
     }): string[];
     inScope(...scopeOrScopeArray: Array<Scopes | Scopes[]>): boolean;
+}
+export declare class Authorizer extends AuthorizerAbstract {
 }
 export {};

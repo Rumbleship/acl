@@ -21,7 +21,7 @@ const BEARER_TOKEN_REGEX = /^Bearer [A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-
 
 class RolesAndIdentifiers extends OneToUniqueManyMap<Roles, string> {}
 
-export class Authorizer {
+export abstract class AuthorizerAbstract {
   protected static _initialized = false;
   protected static _ServiceUser: IServiceUserConfig;
   protected static _AccessToken: IAccessTokenConfig;
@@ -316,3 +316,5 @@ export class Authorizer {
     return (this.scopes as Scopes[]).includes(Scopes.SYSADMIN);
   }
 }
+
+export class Authorizer extends AuthorizerAbstract {}

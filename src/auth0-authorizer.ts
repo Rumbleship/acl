@@ -15,7 +15,7 @@ import { getArrayFromOverloadedRest } from './helpers';
 import { Requires, Required } from './required.decorator';
 import { AuthorizerTreatAsMap, getAuthorizerTreatAs } from './authorizer-treat-as.directive';
 import { ISharedSchema } from '@rumbleship/config';
-import { Authorizer } from './authorizer';
+import { AuthorizerAbstract } from './authorizer';
 const BEARER_TOKEN_REGEX = /^Bearer [A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/;
 
 export interface Auth0Config {
@@ -23,7 +23,7 @@ export interface Auth0Config {
   audience: string;
   clientId: string;
 }
-export class Auth0Authorizer extends Authorizer {
+export class Auth0Authorizer extends AuthorizerAbstract {
   private static _Auth0: Auth0Config;
   static initialize(
     config: Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'>,
