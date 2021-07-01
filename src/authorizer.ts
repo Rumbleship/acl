@@ -105,7 +105,10 @@ export abstract class AuthorizerAbstract {
     return jwt.sign(claims, this.config.AccessToken.secret, jwt_options);
   }
 
-  static make(header_or_marshalled_claims: string, authenticate_immediately = false): Authorizer {
+  static make(
+    header_or_marshalled_claims: string,
+    authenticate_immediately = false
+  ): AuthorizerAbstract {
     if (!Authorizer._initialized) {
       throw new Error('Must initialize Authorizer');
     }
@@ -125,9 +128,6 @@ export abstract class AuthorizerAbstract {
   }
 
   constructor(protected authorizationHeader: string) {
-    if (!Authorizer._initialized) {
-      throw new Error('Must initialize Authorizer');
-    }
     if (!this.authorizationHeader) {
       throw new InvalidJWTError('`authorizationHeader` is required by Authorizer');
     }
@@ -317,4 +317,11 @@ export abstract class AuthorizerAbstract {
   }
 }
 
-export class Authorizer extends AuthorizerAbstract {}
+export class Authorizer extends AuthorizerAbstract {
+  constructor(protected authorizationHeader: string) {
+    super(authorizationHeader);
+    if (!Authorizer._initialized) {
+      throw new Error('Must initialize Authorizer');
+    }
+  }
+}

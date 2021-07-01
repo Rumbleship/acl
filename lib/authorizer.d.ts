@@ -24,7 +24,7 @@ export declare abstract class AuthorizerAbstract {
     static createAuthHeader(claims: AccessClaims, jwt_options?: jwt.SignOptions): string;
     static createServiceUserAuthHeader(jwt_options?: jwt.SignOptions): string;
     static createRefreshToken(user: string, jwt_options?: jwt.SignOptions): string;
-    static make(header_or_marshalled_claims: string, authenticate_immediately?: boolean): Authorizer;
+    static make(header_or_marshalled_claims: string, authenticate_immediately?: boolean): AuthorizerAbstract;
     constructor(authorizationHeader: string);
     /**
      *
@@ -83,5 +83,7 @@ export declare abstract class AuthorizerAbstract {
     inScope(...scopeOrScopeArray: Array<Scopes | Scopes[]>): boolean;
 }
 export declare class Authorizer extends AuthorizerAbstract {
+    protected authorizationHeader: string;
+    constructor(authorizationHeader: string);
 }
 export {};

@@ -17,7 +17,7 @@ export declare class Auth0Authorizer extends AuthorizerAbstract {
     static createAuthHeader(claims: AccessClaims, jwt_options?: jwt.SignOptions): string;
     static createServiceUserAuthHeader(jwt_options?: jwt.SignOptions): string;
     static createRefreshToken(user: string, jwt_options?: jwt.SignOptions): string;
-    static make(header_or_marshalled_claims: string, authenticate_immediately?: boolean): Auth0Authorizer;
+    static make(header_or_marshalled_claims: string, authenticate_immediately?: boolean): AuthorizerAbstract;
     constructor(authorizationHeader: string);
     /**
      *

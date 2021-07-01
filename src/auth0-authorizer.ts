@@ -77,7 +77,7 @@ export class Auth0Authorizer extends AuthorizerAbstract {
   static make(
     header_or_marshalled_claims: string,
     authenticate_immediately = false
-  ): Auth0Authorizer {
+  ): AuthorizerAbstract {
     if (!Auth0Authorizer._initialized) {
       throw new Error('Must initialize Authorizer');
     }
@@ -98,6 +98,9 @@ export class Auth0Authorizer extends AuthorizerAbstract {
 
   constructor(protected authorizationHeader: string) {
     super(authorizationHeader);
+    if (!Auth0Authorizer._initialized) {
+      throw new Error('Must initialize Authorizer');
+    }
   }
   /**
    *
