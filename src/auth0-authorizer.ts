@@ -96,6 +96,9 @@ export class Auth0Authorizer extends AuthorizerAbstract {
     return authorizer;
   }
 
+  constructor(protected authorizationHeader: string) {
+    super(authorizationHeader);
+  }
   /**
    *
    * @param {jwt.SignOptions} new_jwt_options

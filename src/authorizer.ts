@@ -124,7 +124,7 @@ export abstract class AuthorizerAbstract {
     return authorizer;
   }
 
-  constructor(private authorizationHeader: string) {
+  constructor(protected authorizationHeader: string) {
     if (!Authorizer._initialized) {
       throw new Error('Must initialize Authorizer');
     }

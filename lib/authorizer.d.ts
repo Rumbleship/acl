@@ -8,7 +8,7 @@ import { ISharedSchema, IServiceUserConfig, IAccessTokenConfig } from '@rumblesh
 declare class RolesAndIdentifiers extends OneToUniqueManyMap<Roles, string> {
 }
 export declare abstract class AuthorizerAbstract {
-    private authorizationHeader;
+    protected authorizationHeader: string;
     protected static _initialized: boolean;
     protected static _ServiceUser: IServiceUserConfig;
     protected static _AccessToken: IAccessTokenConfig;

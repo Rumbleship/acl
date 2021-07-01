@@ -11,12 +11,14 @@ export interface Auth0Config {
     clientId: string;
 }
 export declare class Auth0Authorizer extends AuthorizerAbstract {
+    protected authorizationHeader: string;
     private static _Auth0;
     static initialize(config: Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'>, auth0: Auth0Config): void;
     static createAuthHeader(claims: AccessClaims, jwt_options?: jwt.SignOptions): string;
     static createServiceUserAuthHeader(jwt_options?: jwt.SignOptions): string;
     static createRefreshToken(user: string, jwt_options?: jwt.SignOptions): string;
     static make(header_or_marshalled_claims: string, authenticate_immediately?: boolean): Auth0Authorizer;
+    constructor(authorizationHeader: string);
     /**
      *
      * @param {jwt.SignOptions} new_jwt_options
