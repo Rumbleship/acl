@@ -1,23 +1,26 @@
 import * as jwt from 'jsonwebtoken';
 import { Oid } from '@rumbleship/oid';
+import { OneToUniqueManyMap } from './utils/one-to-unique-many-map';
 import { Permissions } from './permissions-matrix';
-import { Claims, Scopes, Actions, Resource, AccessClaims } from './types';
+import { Claims, Scopes, Actions, Roles, Resource, AccessClaims } from './types';
 import { AuthorizerTreatAsMap } from './authorizer-treat-as.directive';
-import { ISharedSchema } from '@rumbleship/config';
+import { ISharedSchema, IServiceUserConfig, IAccessTokenConfig } from '@rumbleship/config';
+declare class RolesAndIdentifiers extends OneToUniqueManyMap<Roles, string> {
+}
 export declare class Authorizer {
     private authorizationHeader;
-    private static _initialized;
-    private static _ServiceUser;
-    private static _AccessToken;
-    private accessToken;
-    private roles;
-    private _claims?;
+    protected static _initialized: boolean;
+    protected static _ServiceUser: IServiceUserConfig;
+    protected static _AccessToken: IAccessTokenConfig;
+    protected accessToken: string;
+    protected roles: RolesAndIdentifiers;
+    protected _claims?: Claims;
     protected static get config(): Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'>;
-    private get user();
-    private get on_behalf_of();
-    private get scopes();
-    private get claims();
-    static initialize(config: Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'>): void;
+    protected get user(): string;
+    protected get on_behalf_of(): Oid | undefined;
+    protected get scopes(): Scopes[];
+    protected get claims(): Claims;
+    static initialize(config: Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'>, ...rest: any[]): void;
     static createAuthHeader(claims: AccessClaims, jwt_options?: jwt.SignOptions): string;
     static createServiceUserAuthHeader(jwt_options?: jwt.SignOptions): string;
     static createRefreshToken(user: string, jwt_options?: jwt.SignOptions): string;
@@ -79,3 +82,4 @@ export declare class Authorizer {
     }): string[];
     inScope(...scopeOrScopeArray: Array<Scopes | Scopes[]>): boolean;
 }
+export {};

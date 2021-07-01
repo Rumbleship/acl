@@ -1,14 +1,11 @@
 import * as jwt from 'jsonwebtoken';
 import * as jwks from 'jwks-rsa';
 import { Oid } from '@rumbleship/oid';
-import { OneToUniqueManyMap } from './utils/one-to-unique-many-map';
-import { InvalidJWTError } from './errors';
 import { Permissions, ResourceAsScopesSingleton } from './permissions-matrix';
 import {
   Claims,
   Scopes,
   Actions,
-  Roles,
   Resource,
   AccessClaims,
   RefreshClaims,
@@ -17,7 +14,8 @@ import {
 import { getArrayFromOverloadedRest } from './helpers';
 import { Requires, Required } from './required.decorator';
 import { AuthorizerTreatAsMap, getAuthorizerTreatAs } from './authorizer-treat-as.directive';
-import { ISharedSchema, IServiceUserConfig, IAccessTokenConfig } from '@rumbleship/config';
+import { ISharedSchema } from '@rumbleship/config';
+import { Authorizer } from './authorizer';
 const BEARER_TOKEN_REGEX = /^Bearer [A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/;
 
 export interface Auth0Config {
@@ -25,48 +23,8 @@ export interface Auth0Config {
   audience: string;
   clientId: string;
 }
-class RolesAndIdentifiers extends OneToUniqueManyMap<Roles, string> {}
-
-export class Auth0Authorizer {
-  private static _initialized = false;
-  private static _ServiceUser: IServiceUserConfig;
-  private static _AccessToken: IAccessTokenConfig;
+export class Auth0Authorizer extends Authorizer {
   private static _Auth0: Auth0Config;
-  private accessToken: string;
-  private roles: RolesAndIdentifiers = new RolesAndIdentifiers();
-
-  private _claims?: Claims;
-  protected static get config(): Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'> & {
-    Auth0: Auth0Config;
-  } {
-    if (!this._initialized) {
-      throw new Error('Must initialize Authorizer');
-    }
-    return {
-      AccessToken: this._AccessToken,
-      ServiceUser: this._ServiceUser,
-      Auth0: this._Auth0
-    };
-  }
-  private get user(): string {
-    return this._claims?.user as string;
-  }
-  private get on_behalf_of(): Oid | undefined {
-    if (this._claims?.on_behalf_of) {
-      return new Oid(this._claims?.on_behalf_of);
-    }
-    return undefined;
-  }
-  private get scopes(): Scopes[] {
-    return this._claims?.scopes ?? [];
-  }
-  private get claims(): Claims {
-    if (!this._claims) {
-      throw new Error('Authorizer must be authenticated');
-    }
-    return this._claims;
-  }
-
   static initialize(
     config: Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'>,
     auth0: Auth0Config
@@ -138,22 +96,6 @@ export class Auth0Authorizer {
     return authorizer;
   }
 
-  constructor(private authorizationHeader: string) {
-    if (!Auth0Authorizer._initialized) {
-      throw new Error('Must initialize Authorizer');
-    }
-    if (!this.authorizationHeader) {
-      throw new InvalidJWTError('`authorizationHeader` is required by Authorizer');
-    }
-    if (!this.authorizationHeader.match(BEARER_TOKEN_REGEX)) {
-      throw new InvalidJWTError(
-        '`authorizationHeader` must be in form `Bearer {{jwt.claims.here}}'
-      );
-    }
-
-    this.accessToken = this.authorizationHeader.split(' ')[1];
-  }
-
   /**
    *
    * @param {jwt.SignOptions} new_jwt_options
@@ -190,7 +132,7 @@ export class Auth0Authorizer {
   }
 
   @Required()
-  authenticate(): void {
+  async authenticate(): Promise<void> {
     const decoded: { kid: string | number } & any = jwt.decode(this.accessToken);
     const client = new jwks.JwksClient({
       cache: true,
@@ -199,7 +141,7 @@ export class Auth0Authorizer {
       jwksUri: `https://${Auth0Authorizer._Auth0.domain}/.well-known/jwks.json`
     });
 
-    void client
+    await client
       .getSigningKey(decoded.kid)
       .then(key => jwt.verify(this.accessToken, key.getPublicKey(), { algorithms: [key.alg] }));
   }
@@ -256,6 +198,7 @@ export class Auth0Authorizer {
   @Requires('authenticate')
   public can(
     requestedAction: Actions,
+    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     authorizable: any,
     matrix: Permissions,
     treatAuthorizableAttributesAs: AuthorizerTreatAsMap = getAuthorizerTreatAs(authorizable)

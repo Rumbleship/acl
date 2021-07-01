@@ -4,33 +4,19 @@ import { Permissions } from './permissions-matrix';
 import { Claims, Scopes, Actions, Resource, AccessClaims } from './types';
 import { AuthorizerTreatAsMap } from './authorizer-treat-as.directive';
 import { ISharedSchema } from '@rumbleship/config';
+import { Authorizer } from './authorizer';
 export interface Auth0Config {
     domain: string;
     audience: string;
     clientId: string;
 }
-export declare class Auth0Authorizer {
-    private authorizationHeader;
-    private static _initialized;
-    private static _ServiceUser;
-    private static _AccessToken;
+export declare class Auth0Authorizer extends Authorizer {
     private static _Auth0;
-    private accessToken;
-    private roles;
-    private _claims?;
-    protected static get config(): Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'> & {
-        Auth0: Auth0Config;
-    };
-    private get user();
-    private get on_behalf_of();
-    private get scopes();
-    private get claims();
     static initialize(config: Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'>, auth0: Auth0Config): void;
     static createAuthHeader(claims: AccessClaims, jwt_options?: jwt.SignOptions): string;
     static createServiceUserAuthHeader(jwt_options?: jwt.SignOptions): string;
     static createRefreshToken(user: string, jwt_options?: jwt.SignOptions): string;
     static make(header_or_marshalled_claims: string, authenticate_immediately?: boolean): Auth0Authorizer;
-    constructor(authorizationHeader: string);
     /**
      *
      * @param {jwt.SignOptions} new_jwt_options
@@ -40,7 +26,7 @@ export declare class Auth0Authorizer {
     extend(new_jwt_options?: jwt.SignOptions): void;
     isExpired(): boolean;
     marshalClaims(): string;
-    authenticate(): void;
+    authenticate(): Promise<void>;
     getUser(): string;
     getOnBehalfOf(): Oid | undefined;
     /**

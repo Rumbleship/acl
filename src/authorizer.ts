@@ -22,13 +22,13 @@ const BEARER_TOKEN_REGEX = /^Bearer [A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-
 class RolesAndIdentifiers extends OneToUniqueManyMap<Roles, string> {}
 
 export class Authorizer {
-  private static _initialized = false;
-  private static _ServiceUser: IServiceUserConfig;
-  private static _AccessToken: IAccessTokenConfig;
-  private accessToken: string;
-  private roles: RolesAndIdentifiers = new RolesAndIdentifiers();
+  protected static _initialized = false;
+  protected static _ServiceUser: IServiceUserConfig;
+  protected static _AccessToken: IAccessTokenConfig;
+  protected accessToken: string;
+  protected roles: RolesAndIdentifiers = new RolesAndIdentifiers();
 
-  private _claims?: Claims;
+  protected _claims?: Claims;
   protected static get config(): Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'> {
     if (!this._initialized) {
       throw new Error('Must initialize Authorizer');
@@ -38,26 +38,29 @@ export class Authorizer {
       ServiceUser: this._ServiceUser
     };
   }
-  private get user(): string {
+  protected get user(): string {
     return this._claims?.user as string;
   }
-  private get on_behalf_of(): Oid | undefined {
+  protected get on_behalf_of(): Oid | undefined {
     if (this._claims?.on_behalf_of) {
       return new Oid(this._claims?.on_behalf_of);
     }
     return undefined;
   }
-  private get scopes(): Scopes[] {
+  protected get scopes(): Scopes[] {
     return this._claims?.scopes ?? [];
   }
-  private get claims(): Claims {
+  protected get claims(): Claims {
     if (!this._claims) {
       throw new Error('Authorizer must be authenticated');
     }
     return this._claims;
   }
 
-  static initialize(config: Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'>): void {
+  static initialize(
+    config: Pick<ISharedSchema, 'AccessToken' | 'ServiceUser'>,
+    ...rest: any[]
+  ): void {
     this._AccessToken = { ...config.AccessToken };
     this._ServiceUser = { ...config.ServiceUser };
     this._initialized = true;
